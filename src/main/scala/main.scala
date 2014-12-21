@@ -5,27 +5,46 @@ object MoneyMaker {
   val currency = "USD"
   val capital = 100
   val sim_duration = 1000; // how long each simulation runs for
-  val n_trials = 100; // how mayn simulations to run
+  val n_trials = 100; // how many simulations to run
+
+  type Lold = List[List[Double]]
+
+  val markets = List(RandomMarket, SinusoidMarket, SinusoidNoiseMarket)
+  val traderNames = List("RandomTrader", "StubbornTrader")
+  def getNewTraders(): List[List[Trader]] = {
+    List(
+      markets map (m => new RandomTrader(m, capital, currency)),
+      markets map (m => new StubbornTrader(m, capital, currency)))
+  }
+
   def main(args: Array[String]) {
-    val markets = List(RandomMarket, SinusoidMarket)
     // Get the profits of all the traders
-    def getProfits(): List[Double] = {
-      val traders = markets map (market => new RandomTrader(market, capital, currency))
+    def getProfits(): Lold = {
       def getProfit(trader: Trader): Double = {
         1 to sim_duration foreach { _ => trader.trade() }
         trader.getMoneyLeft
       }
-      traders map getProfit
+      getNewTraders() map (traders => traders map getProfit)
     }
-    var profits = getProfits()
-    2 to n_trials foreach { _ =>
-      profits = (getProfits() zip profits) map {
-        case (sum, next) => sum + next
+    def sum2d(lst1: Lold, lst2: Lold): Lold = {
+      (lst1 zip lst2) map {
+        case (l1, l2) => (l1 zip l2) map { case (d1, d2) => d1 + d2 }
       }
     }
-    profits = profits map (x => x/n_trials)
-    (profits zip markets) map {
-      case (perf, market) => println(s"$market money left: $perf")
+    def scale2d(lst: Lold, factor: Double): Lold = {
+      lst map (l => l map (d => factor * d))
     }
+    var profits = getProfits()
+    2 to n_trials foreach { _ => profits = sum2d(profits, getProfits) }
+    profits = scale2d(profits, 1.0 / n_trials.toDouble)
+    def printProfits(profits: Lold): Unit = {
+      (profits zip traderNames) map { case (ps, name) =>
+        println(s"$name:")
+        (ps zip markets) map { case (p, m) =>
+          println(s"\tProfit at $m: $p") 
+        }
+      }
+    }
+    printProfits(profits)
   }
 }

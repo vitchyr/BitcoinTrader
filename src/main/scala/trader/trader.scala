@@ -7,13 +7,13 @@ package trader {
     val m: Market;
     val currency: String;
 
-    def getSellRate(): Double = m.getSellRate(currency)._1
-    def getBuyRate(): Double = m.getBuyRate(currency)._1
+    def getSellRate(): Double = m.getSellInfo(currency)._1
+    def getBuyRate(): Double = m.getBuyInfo(currency)._1
 
     def buy(amount: Double): Unit = {
       val buyRate = getBuyRate()
       if (amount * buyRate > cash) {
-        println(s"Don't have enough cash to buy $amount bitcoins.")
+        //println(s"Don't have enough cash to buy $amount bitcoins.")
         return ()
       }
       val trans = m.buy(amount, currency)
@@ -23,7 +23,7 @@ package trader {
 
     def sell(amount: Double): Unit = {
       if (amount > bitcoins) {
-        println(s"Don't have $amount bitcoins to sell.")
+        //println(s"Don't have $amount bitcoins to sell.")
         return ()
       }
       val trans = m.sell(amount, currency)

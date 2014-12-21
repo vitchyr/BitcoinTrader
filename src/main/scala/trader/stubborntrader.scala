@@ -9,18 +9,16 @@ package trader {
     var bitcoins: Double = 0;
     var boughtRate: Option[Double] = None
 
-    def shouldSell(sellRate: Double, buyRate: Double): Boolean =
-      sellRate > buyRate
+    def shouldSell(buyRate: Double): Boolean = getSellRate() > buyRate
 
     def trade(): Unit = boughtRate match {
       case Some(buyRate) => {
-        val sellRate = getSellRate()
-        if (shouldSell(sellRate, buyRate)) {
+        if (shouldSell(buyRate)) {
           sell(bitcoins) 
         }
       }
       case None => {
-        buy(cash * getBuyRate)
+        buy(cash / getBuyRate)
       }
     }
   }
