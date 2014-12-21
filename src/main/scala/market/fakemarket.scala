@@ -1,29 +1,39 @@
+import defs._
+
 package market { 
   // Fake markets use fake data for the buy/sell rate.
   trait FakeMarket extends Market with Iterable[Double] {
-    val sellCut: Double = .98
-    var lastBuyRate: Double = 0
-    def getLastBuyRate(): Double = {
-      if (lastBuyRate == 0) {
-        lastBuyRate = this.iterator.next()
-      }
-      lastBuyRate
-    }
+    val SellCut: Double = .98
+    var lastBuyRate: Option[Double] = None
 
-    def time(): Long = System.currentTimeMillis / 1000
+    // in seconds
+    def time(): Double = System.currentTimeMillis.toDouble / 1000
+
+    def getLastBuyRate(): Double = lastBuyRate match {
+      case Some(rate) => rate
+      case None => {
+        val newRate = this.iterator.next()
+        lastBuyRate = Some(newRate)
+        newRate
+      }
+    }
 
     def buy(amount: Double, currency: String): Transaction =
-      new Transaction(amount, amount * getLastBuyRate, currency)
-    def sell(amount: Double, currency: String): Transaction =
-      new Transaction(amount, sellCut * amount * getLastBuyRate, currency)
+      new Transaction(amount, amount * getLastBuyRate(), currency)
 
-    def getRate(factor: Double, currency: String): Tuple2[Double, Long] = {
-      lastBuyRate = this.iterator.next();
-      (factor * lastBuyRate, time())
-    }
-    def getBuyInfo(currency: String): Tuple2[Double, Long]
+    def sell(amount: Double, currency: String): Transaction =
+      new Transaction(amount, SellCut * amount * getLastBuyRate(), currency)
+
+    def getRate(factor: Double, currency: String): BitcoinInfo =
+      new BitcoinInfo(factor * getLastBuyRate(), time(), currency)
+
+    def getBuyInfo(currency: String): BitcoinInfo
       = getRate(1, currency)
-    def getSellInfo(currency: String): Tuple2[Double, Long]
-      = getRate(sellCut, currency)
+
+    def getSellInfo(currency: String): BitcoinInfo
+      = getRate(SellCut, currency)
+
+    def update(): Unit =
+      lastBuyRate = Some(this.iterator.next())
   }
 }

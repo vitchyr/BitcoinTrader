@@ -1,4 +1,5 @@
 import market.Market
+import defs._
 
 package trader {
   trait Trader { 
@@ -7,11 +8,25 @@ package trader {
     val m: Market;
     val currency: String;
 
-    def getSellRate(): Double = m.getSellInfo(currency)._1
-    def getBuyRate(): Double = m.getBuyInfo(currency)._1
+    /*************************
+     ** Method to implement **
+     *************************/
+    // Update the trader so that they know if they want to buy or sell
+    def update(): Unit
+    // Amount of bitcoins to sell
+    def amountToSell: Double
+    // Amount of bitcoins to buy
+    def amountToBuy: Double
+
+    /*************************
+     ** Implemented Methods **
+     *************************/
+    def sellInfo: BitcoinInfo = m.getSellInfo(currency)
+    def buyInfo: BitcoinInfo = m.getBuyInfo(currency)
+    def sellRate: Double = sellInfo.price
+    def buyRate: Double = buyInfo.price
 
     def buy(amount: Double): Unit = {
-      val buyRate = getBuyRate()
       if (amount * buyRate > cash) {
         //println(s"Don't have enough cash to buy $amount bitcoins.")
         return ()
@@ -32,8 +47,18 @@ package trader {
     }
     
     // Tell the trader to try trading for one iteration.
-    def trade(): Unit
+    def trade(): Unit = {
+      update()
+      sell(amountToSell)
+      buy(amountToBuy)
+    }
+
     // Returns the amount of money left (capital not invested + money made)
-    def getMoneyLeft(): Double = cash + getSellRate() * bitcoins;
+    def moneyLeft: Double = cash + sellRate * bitcoins;
+    def isBroke: Boolean = cash == 0.0 && bitcoins == 0.0
+  }
+
+  trait TraderFactory {
+    def newTrader(m: Market, cash: Double, currency: String): Trader
   }
 }

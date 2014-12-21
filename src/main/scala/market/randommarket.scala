@@ -5,7 +5,7 @@ package market {
   // A market whose price randomly changes. It can even be negative!
   object RandomMarket extends FakeMarket {
     private var price: Double = 100
-    setSeed(time())
+    setSeed(time().toLong)
 
     def iterator = new Iterator[Double] {
       def hasNext = true
