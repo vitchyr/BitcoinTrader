@@ -17,5 +17,7 @@ package market {
 
     // Update the information about this market.
     def update(): Unit
+
+    def sellCut: Double // = cost to sell / cost to buy 1 BTC
   }
 }

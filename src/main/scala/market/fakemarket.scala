@@ -4,6 +4,7 @@ package market {
   // Fake markets use fake data for the buy/sell rate.
   trait FakeMarket extends Market with Iterable[Double] {
     val SellCut: Double = .98
+    def sellCut = SellCut
     var lastBuyRate: Option[Double] = None
 
     // in seconds
@@ -19,10 +20,10 @@ package market {
     }
 
     def buy(amount: Double, currency: String): Transaction =
-      new Transaction(amount, amount * getLastBuyRate(), currency)
+      new Transaction(amount, -amount * getLastBuyRate(), currency)
 
     def sell(amount: Double, currency: String): Transaction =
-      new Transaction(amount, SellCut * amount * getLastBuyRate(), currency)
+      new Transaction(-amount, SellCut * amount * getLastBuyRate(), currency)
 
     def getRate(factor: Double, currency: String): BitcoinInfo =
       new BitcoinInfo(factor * getLastBuyRate(), time(), currency)
