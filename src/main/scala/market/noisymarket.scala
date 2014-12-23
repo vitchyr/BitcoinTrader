@@ -5,7 +5,7 @@ package market {
   class NoisyMarket(fm: FakeMarket) extends FakeMarket {
     private var t: Double = 0
     private val dt = 0.01
-    private val An = 0 // amplitude of noise
+    private val An = 3 // amplitude of noise
 
     def iterator = new Iterator[Double] {
       def hasNext = fm.iterator.hasNext
