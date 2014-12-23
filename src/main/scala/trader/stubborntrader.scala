@@ -1,37 +1,42 @@
 import market.Market
+import defs._
 
 package trader {
   // A trader that buys immediately if he hasn't bought anything yet.
   // Only sells if he would make a profit.
   class StubbornTrader(val m: Market, var cash: Double, val currency: String)
-      extends Trader{
+      extends SingleTrader {
     var bitcoins: Double = 0
-    var boughtRate: Option[Double] = None
-    var savedSellRate: Double = 0
-    var savedBuyRate: Double = 0
+    var moneyIfSold: Double = 0
+    var moneySpent: Double = 0
 
-    def update(): Unit = { savedSellRate = sellRate; savedBuyRate = buyRate }
-    def amountToSell = boughtRate match {
-      case Some(rate) => if (savedSellRate > rate) {
-        boughtRate = None
+    def update(): Unit = {
+      moneyIfSold = valueOf(bitcoins)
+    }
+
+    def amountToSell = {
+      if (moneyIfSold > moneySpent) {
         bitcoins
       } else {
         0.0
       }
-      case None => 0.0
     }
-    def amountToBuy = boughtRate match {
-      case Some(rate) => 0.0
-      case None => {
-        val toBuy = cash / buyRate;
-        boughtRate = Some(buyRate);
-        toBuy
+
+    def amountToBuy = {
+      if (moneySpent == 0) {
+        maxBTCsCanBuy
+      } else {
+        0.0
       }
     }
+
+    def updateAfterSell(trans: Transaction): Unit = moneySpent = 0
+
+    def updateAfterBuy(trans: Transaction): Unit = moneySpent = -trans.dCash
   }
 
-  object StubbornTraderFactory extends TraderFactory {
-    def newTrader(m: Market, cash: Double, currency: String): Trader =
+  object StubbornTraderFactory extends SingleTraderFactory {
+    def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
       new StubbornTrader(m, cash, currency)
 
     override def toString = "Stubborn Trader"

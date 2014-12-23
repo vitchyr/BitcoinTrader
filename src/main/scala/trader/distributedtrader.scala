@@ -1,43 +1,60 @@
 import market.Market
 import defs._
+import scala.collection.mutable.ArrayBuffer
 
 package trader {
-  // Creates many instances of a trader and uses them together to trade
-  class DistributedTrader(factory: TraderFactory, val m: Market,
-      var cash: Double, val currency: String) extends Trader{
+  /* Creates many instances of a trader. Divides money among them and lets them
+   * trade.
+   *
+   * Each subinstance of traders doesn't start immediately. They have [delay]
+   * updates between each starts. Set [delay] to start all subtraders
+   * immediately. */
+  class DistributedTrader(
+      val m: Market,
+      var cash: Double,
+      val currency: String,
+      factory: TraderFactory,
+      nTraders: Int,
+      delay: Int)
+    extends Trader {
     var bitcoins: Double = 0
-    val MinTimeBtwnTrades: Double = 0.01
-    val NTraders = 100
-    val traders: List[Trader] = List.range(0, NTraders) map
-      (i => factory.newTrader(m, cash / NTraders, currency))
 
-    def sum(l: List[Double]): Double = l match {
-      case x::tail => x + sum(tail)
-      case Nil => 0
+    val allTraders: Array[Trader] = (List.range(0, nTraders) map
+      (i => factory.newTrader(m, cash / nTraders, currency))).toArray
+    var traders: ArrayBuffer[Trader] = new ArrayBuffer()
+    if (delay == 0) traders appendAll allTraders
+
+    var nUpdates: Int = 0
+
+    def trade(): Unit = {
+      if (delay != 0 && (nUpdates % delay) == 0) {
+        if (nUpdates < delay * allTraders.length) {
+          traders.append(allTraders(nUpdates/delay))
+        }
+      }
+      nUpdates += 1
+      traders foreach (t => t.trade())
     }
 
-    def update(): Unit = traders foreach (t => t.update())
-    def amountToSell: Double = sum(traders map (t => t.amountToSell))
-    def amountToBuy: Double = sum(traders map (t => t.amountToBuy))
+    def moneyLeft = {
+      def sum(xs: ArrayBuffer[Double]): Double = (0.0 /: xs)(_+_)
+      sum(traders map (t => t.moneyLeft))
+    }
   }
 
-  object DistributedTraderFactory extends TraderFactory {
-    private var _traderFactory: Option[TraderFactory] = None
-    def traderFactory = _traderFactory match {
-      case Some(factory) => factory
-      case None => sys.error("No factory set.")
-    }
-    def traderFactory_= (t: TraderFactory): Unit = _traderFactory = Some(t)
-
+  class DistributedTraderFactory(
+      f: TraderFactory,
+      nTraders: Int,
+      delay: Int)
+    extends TraderFactory {
     def newTrader(m: Market, cash: Double, currency: String): Trader =
-        _traderFactory match {
-      case Some(factory) => new DistributedTrader(factory, m, cash, currency)
-      case None => sys.error("Must set traderFactory before creating traders")
-    }
+      new DistributedTrader(m, cash, currency, f, nTraders, delay)
 
-    override def toString = _traderFactory match {
-      case Some(factory) => s"Distributed '$factory' Trader"
-      case None => s"Generic Distributed Trader"
-    }
+    override def toString = s"Distributed '$f' Trader"
+  }
+
+  object DistributedTraderFactory {
+    def apply(f: TraderFactory, nTraders: Int, delay: Int) =
+      new DistributedTraderFactory(f, nTraders, delay)
   }
 }

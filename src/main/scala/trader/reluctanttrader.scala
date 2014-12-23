@@ -4,38 +4,62 @@ import defs._
 package trader {
   // A trader that buys immediately if he hasn't bought anything yet.
   // Only sells if he would make a profit, or if it's been a while
-  class ReluctantTrader(val m: Market, var cash: Double, val currency: String)
-      extends Trader{
+  class ReluctantTrader(
+      val m: Market,
+      var cash: Double,
+      val currency: String,
+      maxNumUpdates: Int)
+    extends SingleTrader {
     var bitcoins: Double = 0
-    var boughtInfo: Option[BitcoinInfo] = None
-    var savedSellInfo: Option[BitcoinInfo] = None
-    val MaxTime: Double = 0.01
 
-    def update(): Unit = { savedSellInfo = Some(sellInfo) }
-    def amountToSell: Double = (savedSellInfo, boughtInfo) match {
-      case (Some(newSellInfo), Some(savedBoughtInfo)) =>
-        if (newSellInfo.price > savedBoughtInfo.price ||
-            (newSellInfo.time - savedBoughtInfo.time) > MaxTime) {
-          boughtInfo = None
-          bitcoins
-        } else {
-          0.0
-        }
-      case _ => 0.0
+    var moneyIfSold: Double = 0
+    var moneySpent: Double = 0
+    var idxBought: Int = 0 // = nUpdates when last purchase was made
+    var nUpdates: Int = 0 // number of times update was called 
+
+    def update(): Unit = {
+      val sellQ = sellQuote(bitcoins)
+      moneyIfSold = sellQ.dCash
+      nUpdates += 1
     }
-    def amountToBuy: Double = boughtInfo match {
-      case Some(info) => 0.0
-      case None =>
-        val info = buyInfo
-        boughtInfo = Some(info)
-        cash / info.price
+
+    def amountToSell: Double = {
+      if (bitcoins != 0 &&
+          ((nUpdates - idxBought) > maxNumUpdates
+          || moneyIfSold > moneySpent)) {
+        return bitcoins
+      }
+      0.0
+    }
+
+    def amountToBuy = {
+      if (moneySpent == 0) {
+        maxBTCsCanBuy
+      } else {
+        0.0
+      }
+    }
+
+    def updateAfterSell(trans: Transaction): Unit = {
+      moneySpent = 0
+      idxBought = 0
+    }
+
+    def updateAfterBuy(trans: Transaction): Unit = {
+      moneySpent = -trans.dCash
+      idxBought = nUpdates
     }
   }
 
-  object ReluctantTraderFactory extends TraderFactory {
-    def newTrader(m: Market, cash: Double, currency: String): Trader =
-      new ReluctantTrader(m, cash, currency)
+  class ReluctantTraderFactory(maxNumUpdates: Int)
+      extends SingleTraderFactory {
+    def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
+      new ReluctantTrader(m, cash, currency, maxNumUpdates)
 
     override def toString = "Reluctant Trader"
+  }
+
+  object ReluctantTraderFactory {
+    def apply(maxNumUpdates: Int) = new ReluctantTraderFactory(maxNumUpdates)
   }
 }

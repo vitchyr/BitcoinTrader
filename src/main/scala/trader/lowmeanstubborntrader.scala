@@ -4,25 +4,29 @@ import scala.collection.mutable.Queue
 
 package trader {
   // A trader that buys immediately if the current value is less than the mean
-  // by some percentage. Sells if the current value is higher than the mean by
-  // some percentage.
-  class LowHighMeanTrader(
+  // by some percentage. Sells only if he would make a profit.
+  class LowMeanStubbornTrader(
       val m: Market,
       var cash: Double,
       val currency: String,
       windowSize:Int,
-      buyPercent: Double,
-      sellPercent: Double)
+      buyPercent: Double)
     extends SingleTrader {
-    val HighThreshold: Double = 1 + sellPercent
     val LowThreshold: Double = 1 - buyPercent
-
     var bitcoins: Double = 0
+
+    // Low mean logic
     val pricesSeen: Queue[Double] = new Queue()
     var runningSum: Double = 0
     var nAveraged: Int = 0
 
+    // Stubborn Logic
+    var moneyIfSold: Double = 0
+    var moneySpent: Double = 0
+
     def update(): Unit = {
+      moneyIfSold = valueOf(bitcoins)
+
       val price = btcPrice
       runningSum += price
       pricesSeen.enqueue(price)
@@ -33,14 +37,12 @@ package trader {
       }
     }
 
-    def amountToSell: Double = {
-      def isHigh =
-        btcValue * windowSize > runningSum * HighThreshold
-      // the first check makes sure that there's enough information to decide
-      if (nAveraged == windowSize && bitcoins != 0 && isHigh) {
-        return bitcoins
+    def amountToSell = {
+      if (moneyIfSold > moneySpent) {
+        bitcoins
+      } else {
+        0.0
       }
-      0.0
     }
 
     def amountToBuy: Double = {
@@ -51,25 +53,22 @@ package trader {
       0.0
     }
 
-    def updateAfterSell(trans: Transaction): Unit = ()
+    def updateAfterSell(trans: Transaction): Unit = moneySpent = 0
 
-    def updateAfterBuy(trans: Transaction): Unit = ()
+    def updateAfterBuy(trans: Transaction): Unit = moneySpent = -trans.dCash
   }
 
-  class LowHighMeanTraderFactory(
+  class LowMeanStubbornTraderFactory(
       windowSize: Int,
-      buyPercent: Double,
-      sellPercent: Double)
+      buyPercent: Double)
     extends SingleTraderFactory {
     def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
-      new LowHighMeanTrader(m, cash, currency, windowSize, buyPercent,
-          sellPercent)
+      new LowMeanStubbornTrader(m, cash, currency, windowSize, buyPercent)
 
-    override def toString = "Low-High Mean Trader"
+    override def toString = "Low Mean Stubborn Trader"
   }
-
-  object LowHighMeanTraderFactory {
-    def apply(windowSize: Int, buyPercent: Double, sellPercent: Double) =
-      new LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
+  object LowMeanStubbornTraderFactory {
+    def apply(windowSize: Int, buyPercent: Double) =
+      new LowMeanStubbornTraderFactory(windowSize, buyPercent)
   }
 }
