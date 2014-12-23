@@ -1,14 +1,13 @@
 import defs._
 
 package market { 
-  // Fake markets use fake data for the buy/sell rate.
+  // Fake markets use fake data for the buy/sell prices.
   trait FakeMarket extends Market with Iterable[Double] {
     val SellCut: Double = .98
-    def sellCut = SellCut
     var lastBuyRate: Option[Double] = None
 
-    // in seconds
-    def time(): Double = System.currentTimeMillis.toDouble / 1000
+    // in milliseconds
+    def time(): Long = System.currentTimeMillis
 
     def getLastBuyRate(): Double = lastBuyRate match {
       case Some(rate) => rate
@@ -19,20 +18,27 @@ package market {
       }
     }
 
-    def buy(amount: Double, currency: String): Transaction =
-      new Transaction(amount, -amount * getLastBuyRate(), currency)
-
     def sell(amount: Double, currency: String): Transaction =
-      new Transaction(-amount, SellCut * amount * getLastBuyRate(), currency)
+      if (amount <= 0) sys.error(s"Cannot sell $amount BTCs") else
+      new Transaction(-amount, SellCut * amount * getLastBuyRate(), time, 
+          currency)
 
-    def getRate(factor: Double, currency: String): BitcoinInfo =
-      new BitcoinInfo(factor * getLastBuyRate(), time(), currency)
+    def buy(amount: Double, currency: String): Transaction =
+      if (amount <= 0) sys.error(s"Cannot buy $amount BTCs") else
+      new Transaction(amount, -amount * getLastBuyRate(), time, currency)
 
-    def getBuyInfo(currency: String): BitcoinInfo
-      = getRate(1, currency)
+    def quoteToSell(amount: Double, currency: String): Transaction =
+      new Transaction(-amount, SellCut * amount * getLastBuyRate(), time, 
+          currency)
 
-    def getSellInfo(currency: String): BitcoinInfo
-      = getRate(SellCut, currency)
+    def quoteToBuy(amount: Double, currency: String): Transaction =
+      new Transaction(amount, -amount * getLastBuyRate(), time, currency)
+
+    def quoteToSellCash(amount: Double, currency: String): Transaction =
+      quoteToSell(amount / SellCut / getLastBuyRate(), currency)
+
+    def quoteToBuyCash(amount: Double, currency: String): Transaction =
+      quoteToBuy(amount / getLastBuyRate(), currency)
 
     def update(): Unit =
       lastBuyRate = Some(this.iterator.next())

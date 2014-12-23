@@ -14,6 +14,6 @@ package market {
       }
     }
 
-    override def toString = "RandomMarket"
+    override def toString = "Random Market"
   }
 }
