@@ -25,17 +25,17 @@ package trader {
     /* The arrays keep track of how much each trader thinks their BTC/cash
      * should change. So if dBtcFromSell(X) = Y, then trader(X) thinks his
      * BTC amount should change by Y from a sale. */
-    var dBtcFromSell: Array[Double] = new Array(nTraders)
-    var dBtcFromBuy: Array[Double] = new Array(nTraders)
-    var dCashFromSell: Array[Double] = new Array(nTraders)
-    var dCashFromBuy: Array[Double] = new Array(nTraders)
+    private var dBtcFromSell: Array[Double] = new Array(nTraders)
+    private var dBtcFromBuy: Array[Double] = new Array(nTraders)
+    private var dCashFromSell: Array[Double] = new Array(nTraders)
+    private var dCashFromBuy: Array[Double] = new Array(nTraders)
 
-    val allTraders: Array[SingleTrader] = (List.range(0, nTraders) map
+    private val allTraders: Array[SingleTrader] = (List.range(0, nTraders) map
       (i => factory.newTrader(m, cash / nTraders, currency))).toArray
-    var traders: ArrayBuffer[SingleTrader] = new ArrayBuffer()
+    private var traders: ArrayBuffer[SingleTrader] = new ArrayBuffer()
     if (delay == 0) traders appendAll allTraders
 
-    var nUpdates: Int = 0
+    private var nUpdates: Int = 0
 
     def sum(xs: ArrayBuffer[Double]): Double = (0.0 /: xs)(_+_)
 

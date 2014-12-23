@@ -6,8 +6,8 @@ package trader {
   class RandomTrader(val m: Market, var cash: Double, val currency: String)
       extends SingleTrader {
     var bitcoins: Double = 0;
-    val bitcoin_delta = 0.01;
-    var shouldBuy = false
+    private val bitcoin_delta = 0.01;
+    private var shouldBuy = false
 
     def update(): Unit = { shouldBuy = nextBoolean }
 

@@ -7,8 +7,8 @@ package trader {
   class StubbornTrader(val m: Market, var cash: Double, val currency: String)
       extends SingleTrader {
     var bitcoins: Double = 0
-    var moneyIfSold: Double = 0
-    var moneySpent: Double = 0
+    private var moneyIfSold: Double = 0
+    private var moneySpent: Double = 0
 
     def update(): Unit = {
       moneyIfSold = valueOf(bitcoins)

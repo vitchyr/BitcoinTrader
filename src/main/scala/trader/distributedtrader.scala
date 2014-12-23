@@ -19,12 +19,12 @@ package trader {
     extends Trader {
     var bitcoins: Double = 0
 
-    val allTraders: Array[Trader] = (List.range(0, nTraders) map
+    private val allTraders: Array[Trader] = (List.range(0, nTraders) map
       (i => factory.newTrader(m, cash / nTraders, currency))).toArray
-    var traders: ArrayBuffer[Trader] = new ArrayBuffer()
+    private var traders: ArrayBuffer[Trader] = new ArrayBuffer()
     if (delay == 0) traders appendAll allTraders
 
-    var nUpdates: Int = 0
+    private var nUpdates: Int = 0
 
     def trade(): Unit = {
       if (delay != 0 && (nUpdates % delay) == 0) {

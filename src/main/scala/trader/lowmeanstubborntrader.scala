@@ -12,17 +12,18 @@ package trader {
       windowSize:Int,
       buyPercent: Double)
     extends SingleTrader {
-    val LowThreshold: Double = 1 - buyPercent
     var bitcoins: Double = 0
 
+    private val LowThreshold: Double = 1 - buyPercent
+
     // Low mean logic
-    val pricesSeen: Queue[Double] = new Queue()
-    var runningSum: Double = 0
-    var nAveraged: Int = 0
+    private val pricesSeen: Queue[Double] = new Queue()
+    private var runningSum: Double = 0
+    private var nAveraged: Int = 0
 
     // Stubborn Logic
-    var moneyIfSold: Double = 0
-    var moneySpent: Double = 0
+    private var moneyIfSold: Double = 0
+    private var moneySpent: Double = 0
 
     def update(): Unit = {
       moneyIfSold = valueOf(bitcoins)

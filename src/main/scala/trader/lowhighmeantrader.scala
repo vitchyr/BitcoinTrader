@@ -14,13 +14,14 @@ package trader {
       buyPercent: Double,
       sellPercent: Double)
     extends SingleTrader {
-    val HighThreshold: Double = 1 + sellPercent
-    val LowThreshold: Double = 1 - buyPercent
-
     var bitcoins: Double = 0
-    val pricesSeen: Queue[Double] = new Queue()
-    var runningSum: Double = 0
-    var nAveraged: Int = 0
+
+    private val HighThreshold: Double = 1 + sellPercent
+    private val LowThreshold: Double = 1 - buyPercent
+
+    private val pricesSeen: Queue[Double] = new Queue()
+    private var runningSum: Double = 0
+    private var nAveraged: Int = 0
 
     def update(): Unit = {
       val price = btcPrice
