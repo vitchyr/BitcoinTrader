@@ -2,7 +2,7 @@ package market {
   // A market whose price follows a math function
   trait MathMarket extends FakeMarket {
     private var t: Double = 0
-    val dt = 0.05
+    private val dt = 0.05
 
     def shapeFunction(time: Double): Double
 
