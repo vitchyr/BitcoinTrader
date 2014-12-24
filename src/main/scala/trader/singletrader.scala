@@ -1,5 +1,6 @@
 import market.Market
 import defs._
+import scala.collection.mutable.ArrayBuffer
 
 package trader {
   /* A single trader with one strategy
@@ -9,9 +10,13 @@ package trader {
    *    price = how much it costs to buy something.
    */
   trait SingleTrader extends Trader { 
-    var cash: Double;
-    var bitcoins: Double;
-    val currency: String;
+    var cash: Double
+    var bitcoins: Double
+    protected val currency: String
+
+    private var _moneyLeft = cash
+
+    private val _history: ArrayBuffer[Transaction] = new ArrayBuffer()
 
     /*************************
      ** Method to implement **
@@ -25,10 +30,14 @@ package trader {
     // Amount of bitcoins to buy
     def amountToBuy: Double
 
-    // Update the trader after having sold this amount
+    /* Update the trader after having sold this amount.
+     * This shouldn't update the trader's bank information, but rather only
+     * decision making state. */
     def updateAfterSell(trans: Transaction): Unit
 
-    // Update the trader after having bought this amount
+    /* Update the trader after having bought this amount
+     * This shouldn't update the trader's bank information, but rather only
+     * decision making state. */
     def updateAfterBuy(trans: Transaction): Unit
     
     /*************************
@@ -36,38 +45,39 @@ package trader {
      *************************/
     // The next 4 methods get a quote for a transaction. The amount bought/sold
     // is in BTC or cash.
-    def sellQuote(amount: Double): Transaction = m.quoteToSell(amount, currency)
-    def sellQuoteCash(amount: Double): Transaction =
+    protected def sellQuote(amount: Double): Transaction = m.quoteToSell(amount, currency)
+    protected def sellQuoteCash(amount: Double): Transaction =
       m.quoteToSellCash(amount, currency)
-    def buyQuote(amount: Double): Transaction = m.quoteToBuy(amount, currency)
-    def buyQuoteCash(amount: Double): Transaction =
+    protected def buyQuote(amount: Double): Transaction = m.quoteToBuy(amount, currency)
+    protected def buyQuoteCash(amount: Double): Transaction =
       m.quoteToBuyCash(amount, currency)
 
     // Returns the amount of money made if [amount] BTCs are sold
-    def valueOf(amount: Double): Double = sellQuote(amount).dCash
+    protected def valueOf(amount: Double): Double = sellQuote(amount).dCash
 
     // Returns the value of 1 BTC
-    def btcValue: Double = valueOf(1.0)
+    protected def btcValue: Double = valueOf(1.0)
 
     // Returns the amount of money needed to buy [amount] BTCs
-    def priceOf(amount: Double): Double = -buyQuote(amount).dCash
+    protected def priceOf(amount: Double): Double = -buyQuote(amount).dCash
 
     // Returns the price of 1 BTC
-    def btcPrice: Double = priceOf(1.0)
+    protected def btcPrice: Double = priceOf(1.0)
 
     // Returns how many BTCs you would have to sell to get [amount] cash
-    def bitcoinsCanSellWith(amount: Double): Double =
+    protected def bitcoinsCanSellWith(amount: Double): Double =
       -m.quoteToSellCash(amount, currency).dBitcoins
 
     // Returns how many BTCs you can buy with [amount] cash
-    def bitcoinsCanBuyWith(amount: Double): Double =
+    protected def bitcoinsCanBuyWith(amount: Double): Double =
       m.quoteToBuyCash(amount, currency).dBitcoins
 
     // Returns the maximum amount of BTCs this trader can buy.
-    def maxBTCsCanBuy: Double = bitcoinsCanBuyWith(cash)
+    protected def maxBTCsCanBuy: Double = bitcoinsCanBuyWith(cash)
 
-    // Update this trader's cash and bitcoins based on a transaction.
-    def updateBTCsAndCash(trans: Transaction): Unit = {
+    /* Update this trader's bank info (cash, bitcoins, history) based on a
+     * transaction. */
+    def updateBank(trans: Transaction): Unit = {
       bitcoins += trans.dBitcoins
       cash += trans.dCash
       bitcoins = Transaction.roundBtc(bitcoins)
@@ -78,11 +88,12 @@ package trader {
       if (cash < 0) {
         sys.error(s"Can't have $cash cash")
       }
+      _history append trans
       //println(s"** UPDATE $this: BTC = $bitcoins. cash = $cash")
     }
 
     // Sell [amount] of bitcoins at the market.
-    def sell(amount: Double): Unit = {
+    protected def sell(amount: Double): Unit = {
       if (amount <= 0 || amount > bitcoins) {
         if (amount < 0) {
           sys.error(s"Can't sell $amount BTCs - $this")
@@ -90,12 +101,12 @@ package trader {
         return ()
       }
       val trans = m.sell(amount, currency)
-      updateBTCsAndCash(trans)
+      updateBank(trans)
       updateAfterSell(trans)
     }
 
     // Buy [amount] of bitcoins at the market.
-    def buy(amount: Double): Unit = {
+    protected def buy(amount: Double): Unit = {
       if (amount <= 0 || priceOf(amount) > cash) {
         if (amount < 0) {
           sys.error(s"Can't buy $amount BTCs - $this")
@@ -103,7 +114,7 @@ package trader {
         return ()
       }
       val trans = m.buy(amount, currency)
-      updateBTCsAndCash(trans)
+      updateBank(trans)
       updateAfterBuy(trans)
     }
 
@@ -116,13 +127,13 @@ package trader {
       // side effects
       sell(toSell)
       buy(toBuy)
+      _moneyLeft = cash + valueOf(bitcoins)
     }
 
+    def history: TraderHistory = _history.toList
+
     // Returns the amount of money left (capital not invested + money made)
-    def moneyLeft: Double = {
-      //println(s"cash = $cash. bitcoins = $bitcoins")
-      cash + valueOf(bitcoins)
-    }
+    def moneyLeft: Double = _moneyLeft
   }
 
   trait SingleTraderFactory extends TraderFactory {
