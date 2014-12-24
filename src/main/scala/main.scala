@@ -9,7 +9,7 @@ object MoneyMaker {
   val capital = 100000
   val MinSimDuration = 1500; // min time a simulation runs for
   val MaxSimDuration = 2000;
-  val NTrials = 10; // how many simulations to run
+  val NTrials = 1; // how many simulations to run
 
   // Parameters for factories
   val maxNumUpdates = 100 // numberof updates until reluctant trader gives up
@@ -21,27 +21,28 @@ object MoneyMaker {
 
   type Lold = List[List[Double]]
 
-  val markets =
+  val markets: List[FakeMarket] =
     List(
-      RandomMarket
+      //RandomMarket
       //, SinMarket
-      , NoisyMarket(SinMarket)
+      //, NoisyMarket(SinMarket)
       //, CosMarket
-      , NoisyMarket(CosMarket)
+      //, NoisyMarket(CosMarket)
+      CoinDeskMarket
     )
   val simpleFactories =
     List(
       //RandomTraderFactory
       //, StubbornTraderFactory
       //, ReluctantTraderFactory(maxNumUpdates)
-      //, LowHighMeanTraderFactory(meanWindowSize, buyPercent, sellPercent)
-       LowMeanStubbornTraderFactory(meanWindowSize, buyPercent)
-      //,LowMeanReluctantTraderFactory(maxNumUpdates, meanWindowSize, buyPercent)
+       LowHighMeanTraderFactory(meanWindowSize, buyPercent, sellPercent)
+      , LowMeanStubbornTraderFactory(meanWindowSize, buyPercent)
+      , LowMeanReluctantTraderFactory(maxNumUpdates, meanWindowSize, buyPercent)
     )
   val traderFactories = simpleFactories ::: (simpleFactories flatMap
     (f => List(
-      DistributedTraderFactory(f, nDistributedTraders, higherOrderDelay)
-      , AggregateTraderFactory(f, nDistributedTraders, higherOrderDelay)
+      //DistributedTraderFactory(f, nDistributedTraders, higherOrderDelay)
+      //, AggregateTraderFactory(f, nDistributedTraders, higherOrderDelay)
       )
     )
   )
@@ -68,11 +69,14 @@ object MoneyMaker {
     def getProfits(): Lold = {
       val traderMarketCombos: List[List[Trader]] = getNewTraders()
       (1 to simDuration) foreach 
-        (i => {
+        (_ => {
           markets foreach (m => m.update())
           traderMarketCombos foreach
-            (traders => traders foreach (t => t.trade()))
+            (traders => traders foreach (t => t.tryToTrade()))
         })
+      traderMarketCombos foreach (ts =>
+        ts foreach (t =>
+          println(s"$t: made ${t.nTradesTried} trade calls at ${t.m}")))
       traderMarketCombos map (traders =>
         traders map (t => t.moneyLeft)
       )
@@ -86,8 +90,12 @@ object MoneyMaker {
       def scale2d(lst: Lold, factor: Double): Lold = {
         lst map (l => l map (d => factor * d))
       }
+      markets foreach (m => m.open())
       var profits = getProfits()
-      2 to NTrials foreach { _ => profits = sum2d(profits, getProfits) }
+      2 to NTrials foreach { _ =>
+        markets foreach (m => m.reset())
+        profits = sum2d(profits, getProfits)
+      }
       scale2d(profits, 1.0 / NTrials.toDouble)
     }
     def printProfits(profits: Lold): Unit = {

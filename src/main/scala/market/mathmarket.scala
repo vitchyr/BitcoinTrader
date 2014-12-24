@@ -15,6 +15,8 @@ package market {
       }
     }
 
+    def resetState(): Unit = t = 0
+
     override def toString = "SinusoidMarket"
   }
 }

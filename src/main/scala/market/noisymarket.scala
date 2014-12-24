@@ -10,6 +10,8 @@ package market {
       def next = fm.iterator.next + (nextDouble - 0.5) * An
     }
 
+    def resetState(): Unit = ()
+
     override def toString = s"Noisy '$fm' Market"
   }
 

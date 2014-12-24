@@ -22,5 +22,12 @@ package market {
 
     // Update the information about this market.
     def update(): Unit
+
+    // Returns true iff the market is still . If not, do not call any other
+    // method besides open()
+    def isOpen(): Boolean
+
+    // Open up the market for the first time (i.e. initialize things.)
+    def open(): Unit
   }
 }
