@@ -11,7 +11,6 @@ package trader {
   trait SingleTrader extends Trader { 
     var cash: Double;
     var bitcoins: Double;
-    val m: Market;
     val currency: String;
 
     /*************************
