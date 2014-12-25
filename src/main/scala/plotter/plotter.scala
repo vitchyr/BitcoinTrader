@@ -18,6 +18,12 @@ package plotter {
       val (sellTs, sellPrices) = (sellData map
         { case (t, dB, dC) => (t.toDouble, -dC/ dB) }).unzip
 
+      //println("Buy time, sell time:")
+      //(buyTs zip sellTs) foreach println
+
+      //println(s"$t data:")
+      //tData foreach println
+
       val f = Figure()
       val p = f.subplot(0)
       p += plot(mTs, mPrices, '-')
