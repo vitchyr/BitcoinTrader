@@ -3,14 +3,14 @@ import defs._
 import scala.collection.mutable.Queue
 
 package trader {
-  // A trader that buys immediately if the current value is less than the mean
-  // by some percentage. Sells if the current value is higher than the mean by
-  // some percentage.
+  /* A trader that buys immediately if the current value is less than the mean
+   * by some percentage. Sells if the current value is higher than the mean by
+   * some percentage. */
   class LowHighMeanTrader(
       val m: Market,
       var cash: Double,
       val currency: String,
-      windowSize:Int,
+      windowSize: Int, // How many previous points to base the mean off of.
       buyPercent: Double,
       sellPercent: Double)
     extends SingleTrader {
