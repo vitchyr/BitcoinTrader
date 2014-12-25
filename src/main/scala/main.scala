@@ -15,10 +15,10 @@ object MoneyMaker {
   // Parameters for factories
   val maxNumUpdates = 100 // numberof updates until reluctant trader gives up
   val nDistributedTraders = 10
-  val meanWindowSize = 30
+  val meanWindowSize = 50
   val sellPercent = 0.03
   val buyPercent = 0.03
-  val higherOrderDelay = 5 // number of updates between each subinstance
+  val higherOrderDelay = 15 // number of updates between each subinstance
 
   type Lold = List[List[Double]]
 
@@ -33,12 +33,12 @@ object MoneyMaker {
     )
   val simpleFactories =
     List(
-      RandomTraderFactory
-      , StubbornTraderFactory
-      , ReluctantTraderFactory(maxNumUpdates)
-      , LowHighMeanTraderFactory(meanWindowSize, buyPercent, sellPercent)
+      //RandomTraderFactory
+      //, StubbornTraderFactory
+      //, ReluctantTraderFactory(maxNumUpdates)
+      LowHighMeanTraderFactory(meanWindowSize, buyPercent, sellPercent)
       , LowMeanStubbornTraderFactory(meanWindowSize, buyPercent)
-      , LowMeanReluctantTraderFactory(maxNumUpdates, meanWindowSize, buyPercent)
+      //, LowMeanReluctantTraderFactory(maxNumUpdates, meanWindowSize, buyPercent)
     )
   val traderFactories = simpleFactories ::: (simpleFactories flatMap
     (f => List(
@@ -129,14 +129,11 @@ object MoneyMaker {
     }
 
     def displaySample(traders: List[Trader]): Unit = {
-      /*
       traders foreach (t => {
         Plotter.plotTraderHistory(t)
       })
       traders foreach (t =>
         println(s"$t: made ${t.nTradesTried} trade calls at ${t.m}"))
-*/
-      Plotter.plotTraderHistory(traders.head)
     }
 
     printReturns(averageReturns())
