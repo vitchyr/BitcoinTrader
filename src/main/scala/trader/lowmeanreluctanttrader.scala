@@ -69,6 +69,8 @@ package trader {
       moneySpent = -trans.dCash
       idxBought = nUpdates
     }
+
+    def name = "Low Mean Reluctant Trader"
   }
 
   class LowMeanReluctantTraderFactory(
@@ -80,7 +82,7 @@ package trader {
       new LowMeanReluctantTrader(m, cash, currency, maxNumUpdates, windowSize,
           buyPercent)
 
-    override def toString = "Low Mean Reluctant Trader"
+    override def toString = "Low Mean Reluctant Trader Factory"
   }
   object LowMeanReluctantTraderFactory {
     def apply(maxNumUpdates: Int, windowSize: Int, buyPercent: Double) =

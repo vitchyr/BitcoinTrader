@@ -89,6 +89,12 @@ package trader {
     def updateAfterBuy(trans: Transaction): Unit = ()
 
     override def moneyLeft = sum(traders map (t => t.moneyLeft))
+
+    def name =
+      if (traders.length == 0)
+        "Generic Aggregate Trader"
+      else
+        s"Aggregate '${traders.head.name}' Trader"
   }
 
   class AggregateTraderFactory(

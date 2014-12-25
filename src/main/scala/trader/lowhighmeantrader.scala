@@ -55,6 +55,8 @@ package trader {
     def updateAfterSell(trans: Transaction): Unit = ()
 
     def updateAfterBuy(trans: Transaction): Unit = ()
+
+    def name = "Low-High Mean Trader"
   }
 
   class LowHighMeanTraderFactory(
@@ -66,7 +68,7 @@ package trader {
       new LowHighMeanTrader(m, cash, currency, windowSize, buyPercent,
           sellPercent)
 
-    override def toString = "Low-High Mean Trader"
+    override def toString = "Low-High Mean Trader Factory"
   }
 
   object LowHighMeanTraderFactory {

@@ -19,12 +19,14 @@ package trader {
     def updateAfterSell(trans: Transaction): Unit = ()
 
     def updateAfterBuy(trans: Transaction): Unit = ()
+
+    def name = "Random Trader"
   }
 
   object RandomTraderFactory extends SingleTraderFactory {
     def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
       new RandomTrader(m, cash, currency)
 
-    override def toString = "Random Trader"
+    override def toString = "Random Trader Factory"
   }
 }

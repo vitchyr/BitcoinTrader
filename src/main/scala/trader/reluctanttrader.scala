@@ -49,6 +49,8 @@ package trader {
       moneySpent = -trans.dCash
       idxBought = nUpdates
     }
+
+    def name = "Reluctant Trader"
   }
 
   class ReluctantTraderFactory(maxNumUpdates: Int)
@@ -56,7 +58,7 @@ package trader {
     def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
       new ReluctantTrader(m, cash, currency, maxNumUpdates)
 
-    override def toString = "Reluctant Trader"
+    override def toString = "Reluctant Trader Factory"
   }
 
   object ReluctantTraderFactory {

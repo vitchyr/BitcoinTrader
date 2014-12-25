@@ -33,12 +33,14 @@ package trader {
     def updateAfterSell(trans: Transaction): Unit = moneySpent = 0
 
     def updateAfterBuy(trans: Transaction): Unit = moneySpent = -trans.dCash
+
+    def name = "Stubborn Trader"
   }
 
   object StubbornTraderFactory extends SingleTraderFactory {
     def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
       new StubbornTrader(m, cash, currency)
 
-    override def toString = "Stubborn Trader"
+    override def toString = "Stubborn Trader Factory"
   }
 }

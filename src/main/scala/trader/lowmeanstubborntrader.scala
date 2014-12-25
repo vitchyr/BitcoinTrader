@@ -57,6 +57,8 @@ package trader {
     def updateAfterSell(trans: Transaction): Unit = moneySpent = 0
 
     def updateAfterBuy(trans: Transaction): Unit = moneySpent = -trans.dCash
+
+    def name = "Low Mean Stubborn Trader"
   }
 
   class LowMeanStubbornTraderFactory(
@@ -66,7 +68,7 @@ package trader {
     def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
       new LowMeanStubbornTrader(m, cash, currency, windowSize, buyPercent)
 
-    override def toString = "Low Mean Stubborn Trader"
+    override def toString = "Low Mean Stubborn Trader Factory"
   }
   object LowMeanStubbornTraderFactory {
     def apply(windowSize: Int, buyPercent: Double) =

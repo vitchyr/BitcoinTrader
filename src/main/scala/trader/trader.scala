@@ -29,6 +29,10 @@ package trader {
     // Returns the amount of money left if the trader were to cash out now (or
     // right when the market has closed)
     def moneyLeft: Double
+
+    /* The name of this type of trader. Don't override toString because the
+     * default toString is nice for debugging. */
+    def name: String
   }
 
   trait TraderFactory {

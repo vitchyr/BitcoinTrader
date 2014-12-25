@@ -42,6 +42,12 @@ package trader {
       def sum(xs: ArrayBuffer[Double]): Double = (0.0 /: xs)(_+_)
       sum(traders map (t => t.moneyLeft))
     }
+
+    def name =
+      if (traders.length == 0)
+        "Generic Distributed Trader"
+      else
+        s"Distributed '${traders.head.name}' Trader"
   }
 
   class DistributedTraderFactory(
