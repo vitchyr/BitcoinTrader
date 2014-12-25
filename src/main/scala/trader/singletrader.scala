@@ -101,8 +101,13 @@ package trader {
         }
         return ()
       }
+      val oldBitcoins = bitcoins
       val trans = m.sell(amount, currency)
       updateBank(trans)
+      if (amount == oldBitcoins && bitcoins != 0.0) {
+        println(s"[Warning] Due to rounding, losing $bitcoins of BTC.")
+        bitcoins = 0.0
+      }
       updateAfterSell(trans)
     }
 
@@ -114,8 +119,13 @@ package trader {
         }
         return ()
       }
+      val oldMax = maxBTCsCanBuy
       val trans = m.buy(amount, currency)
       updateBank(trans)
+      if (amount == oldMax && cash != 0.0) {
+        println(s"[Warning] Due to rounding, losing $cash of $currency.")
+        cash = 0.0
+      }
       updateAfterBuy(trans)
     }
 
