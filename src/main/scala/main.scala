@@ -9,11 +9,11 @@ object MoneyMaker {
   val currency = "USD"
   val capital = 100000
   val MinSimDuration = 1500; // min time a simulation runs for
-  val MaxSimDuration = 2000;
+  val MaxSimDuration = 2000; // this only matters for fake infinite markets
   val NTrials = 1; // how many simulations to run
 
   // Parameters for factories
-  val maxNumUpdates = 100 // numberof updates until reluctant trader gives up
+  val maxNumUpdates = 30 // numberof updates until reluctant trader gives up
   val nDistributedTraders = 10
   val meanWindowSize = 50
   val sellPercent = 0.03
@@ -33,12 +33,12 @@ object MoneyMaker {
     )
   val simpleFactories =
     List(
-      //RandomTraderFactory
-      //, StubbornTraderFactory
-      //, ReluctantTraderFactory(maxNumUpdates)
-      LowHighMeanTraderFactory(meanWindowSize, buyPercent, sellPercent)
+      RandomTraderFactory
+      , StubbornTraderFactory
+      , ReluctantTraderFactory(maxNumUpdates)
+      , LowHighMeanTraderFactory(meanWindowSize, buyPercent, sellPercent)
       , LowMeanStubbornTraderFactory(meanWindowSize, buyPercent)
-      //, LowMeanReluctantTraderFactory(maxNumUpdates, meanWindowSize, buyPercent)
+      , LowMeanReluctantTraderFactory(maxNumUpdates, meanWindowSize, buyPercent)
     )
   val traderFactories = simpleFactories ::: (simpleFactories flatMap
     (f => List(
