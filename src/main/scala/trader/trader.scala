@@ -4,6 +4,9 @@ import defs._
 package trader {
   // A trader buys and sells bitcoins in an attempt to make money
   trait Trader { 
+    // how much money this trader started off with.
+    protected val initialCash: Double
+
     // Where the trader trades
     val m: Market
 
@@ -26,9 +29,12 @@ package trader {
     // A log of past transactions
     def history: TraderHistory
 
-    // Returns the amount of money left if the trader were to cash out now (or
-    // right when the market has closed)
+    /* Returns the amount of money left if the trader were to cash out now (or
+     * right when the market has closed) */
     def moneyLeft: Double
+
+    /* Returns the percentage that the captial changed. */
+    def returns: Double = moneyLeft / initialCash * 100
 
     /* The name of this type of trader. Don't override toString because the
      * default toString is nice for debugging. */

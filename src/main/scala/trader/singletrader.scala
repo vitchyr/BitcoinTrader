@@ -15,6 +15,7 @@ package trader {
     protected val currency: String
 
     private var _moneyLeft = cash
+    protected val initialCash = cash
 
     private val _history: ArrayBuffer[Transaction] = new ArrayBuffer()
 

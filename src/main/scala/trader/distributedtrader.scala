@@ -18,6 +18,7 @@ package trader {
       delay: Int)
     extends Trader {
     var bitcoins: Double = 0
+    protected val initialCash = cash
 
     private val allTraders: Array[Trader] = (List.range(0, nTraders) map
       (i => factory.newTrader(m, cash / nTraders, currency))).toArray
