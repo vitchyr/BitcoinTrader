@@ -8,7 +8,8 @@ package trader {
       val m: Market,
       var cash: Double,
       val currency: String,
-      maxNumUpdates: Int)
+      maxNumUpdates: Int,
+      sellPercent: Double)
     extends SingleTrader {
     var bitcoins: Double = 0
 
@@ -16,6 +17,7 @@ package trader {
     private var moneySpent: Double = 0
     private var idxBought: Int = 0 // = nUpdates when last purchase was made
     private var nUpdates: Int = 0 // number of times update was called
+    private val HighThreshold: Double = 1 + sellPercent
 
     def update(): Unit = {
       val sellQ = sellQuote(bitcoins)
@@ -26,7 +28,7 @@ package trader {
     def amountToSell: Double = {
       if (bitcoins != 0 &&
           ((nUpdates - idxBought) > maxNumUpdates
-          || moneyIfSold > moneySpent)) {
+          || moneyIfSold > moneySpent * HighThreshold)) {
         return bitcoins
       }
       0.0
@@ -53,15 +55,16 @@ package trader {
     def name = "Reluctant Trader"
   }
 
-  class ReluctantTraderFactory(maxNumUpdates: Int)
+  class ReluctantTraderFactory(maxNumUpdates: Int, sellPercent: Double)
       extends SingleTraderFactory {
     def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
-      new ReluctantTrader(m, cash, currency, maxNumUpdates)
+      new ReluctantTrader(m, cash, currency, maxNumUpdates, sellPercent)
 
     override def toString = "Reluctant Trader Factory"
   }
 
   object ReluctantTraderFactory {
-    def apply(maxNumUpdates: Int) = new ReluctantTraderFactory(maxNumUpdates)
+    def apply(maxNumUpdates: Int, sellPercent: Double) =
+      new ReluctantTraderFactory(maxNumUpdates, sellPercent)
   }
 }

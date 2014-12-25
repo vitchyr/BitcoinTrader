@@ -4,9 +4,14 @@ import defs._
 package trader {
   // A trader that buys immediately if he hasn't bought anything yet.
   // Only sells if he would make a profit.
-  class StubbornTrader(val m: Market, var cash: Double, val currency: String)
-      extends SingleTrader {
+  class StubbornTrader(
+      val m: Market,
+      var cash: Double,
+      val currency: String,
+      sellPercent: Double)
+    extends SingleTrader {
     var bitcoins: Double = 0
+    private val HighThreshold: Double = 1 + sellPercent
     private var moneyIfSold: Double = 0
     private var moneySpent: Double = 0
 
@@ -15,7 +20,7 @@ package trader {
     }
 
     def amountToSell = {
-      if (moneyIfSold > moneySpent) {
+      if (moneyIfSold > HighThreshold * moneySpent) {
         bitcoins
       } else {
         0.0
@@ -37,10 +42,18 @@ package trader {
     def name = "Stubborn Trader"
   }
 
-  object StubbornTraderFactory extends SingleTraderFactory {
-    def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
-      new StubbornTrader(m, cash, currency)
+  class StubbornTraderFactory(sellPercent: Double)
+      extends SingleTraderFactory {
+    def newTrader(
+        m: Market,
+        cash: Double,
+        currency: String): SingleTrader =
+      new StubbornTrader(m, cash, currency, sellPercent)
 
     override def toString = "Stubborn Trader Factory"
+  }
+  object StubbornTraderFactory {
+    def apply(sellPercent: Double) =
+      new StubbornTraderFactory(sellPercent) 
   }
 }

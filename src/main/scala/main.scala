@@ -16,7 +16,7 @@ object MoneyMaker {
   val maxNumUpdates = 30 // numberof updates until reluctant trader gives up
   val nDistributedTraders = 10
   val meanWindowSize = 50
-  val sellPercent = 0.03
+  val sellPercent = 0.00
   val buyPercent = 0.03
   val higherOrderDelay = 15 // number of updates between each subinstance
 
@@ -34,15 +34,15 @@ object MoneyMaker {
   val simpleFactories =
     List(
       RandomTraderFactory
-      , StubbornTraderFactory
-      , ReluctantTraderFactory(maxNumUpdates)
-      , LowHighMeanTraderFactory(meanWindowSize, buyPercent, sellPercent)
-      , LowMeanStubbornTraderFactory(meanWindowSize, buyPercent)
-      , LowMeanReluctantTraderFactory(maxNumUpdates, meanWindowSize, buyPercent)
+      , StubbornTraderFactory(sellPercent)
+      , ReluctantTraderFactory(maxNumUpdates, sellPercent)
+      //, LowHighMeanTraderFactory(meanWindowSize, buyPercent, sellPercent)
+      //, LowMeanStubbornTraderFactory(meanWindowSize, buyPercent)
+      //, LowMeanReluctantTraderFactory(maxNumUpdates, meanWindowSize, buyPercent)
     )
   val traderFactories = simpleFactories ::: (simpleFactories flatMap
     (f => List(
-      DistributedTraderFactory(f, nDistributedTraders, higherOrderDelay)
+      //DistributedTraderFactory(f, nDistributedTraders, higherOrderDelay)
       //, AggregateTraderFactory(f, nDistributedTraders, higherOrderDelay)
       )
     )
