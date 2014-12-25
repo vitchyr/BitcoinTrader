@@ -23,9 +23,10 @@ package plotter {
       p += plot(mTs, mPrices, '-')
       p += plot(buyTs, buyPrices, '+')
       p += plot(sellTs, sellPrices, '.')
-      p.xlabel = "Time"
+      p.xlabel = "Time (+ = buy, - = sell)"
       p.ylabel = "Price ($ / BTC)"
-      p.title = s"Transactions of ${t.name} vs. Time (+ = buy, - = sell)"
+      p.title = s"Transactions of ${t.name} vs. Time" + 
+        f"\n(returns = ${t.returns}%3.2f%%)"
       f.saveas(fname)
     }
   }
