@@ -11,8 +11,8 @@ package trader {
       var cash: Double,
       val currency: String,
       windowSize: Int, // How many previous points to base the mean off of.
-      buyPercent: Double,
-      sellPercent: Double)
+      buyPercent: Double, // buy if price is this much lower than the mean
+      sellPercent: Double) // sell if price is this much higher than the mean
     extends SingleTrader {
     var bitcoins: Double = 0
 
