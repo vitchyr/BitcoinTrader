@@ -1,5 +1,6 @@
 import market._
 import trader._
+import plotter.Plotter
 import scala.util.Random.setSeed
 import scala.util.Random.nextInt
 
@@ -13,11 +14,11 @@ object MoneyMaker {
 
   // Parameters for factories
   val maxNumUpdates = 100 // numberof updates until reluctant trader gives up
-  val nDistributedTraders = 20
-  val meanWindowSize = 100
-  val sellPercent = 0.05
-  val buyPercent = 0.05
-  val higherOrderDelay = 25 // number of updates between each subinstance
+  val nDistributedTraders = 10
+  val meanWindowSize = 30
+  val sellPercent = 0.03
+  val buyPercent = 0.03
+  val higherOrderDelay = 5 // number of updates between each subinstance
 
   type Lold = List[List[Double]]
 
@@ -32,16 +33,16 @@ object MoneyMaker {
     )
   val simpleFactories =
     List(
-      //RandomTraderFactory
-      //, StubbornTraderFactory
-      //, ReluctantTraderFactory(maxNumUpdates)
-       LowHighMeanTraderFactory(meanWindowSize, buyPercent, sellPercent)
+      RandomTraderFactory
+      , StubbornTraderFactory
+      , ReluctantTraderFactory(maxNumUpdates)
+      , LowHighMeanTraderFactory(meanWindowSize, buyPercent, sellPercent)
       , LowMeanStubbornTraderFactory(meanWindowSize, buyPercent)
       , LowMeanReluctantTraderFactory(maxNumUpdates, meanWindowSize, buyPercent)
     )
   val traderFactories = simpleFactories ::: (simpleFactories flatMap
     (f => List(
-      //DistributedTraderFactory(f, nDistributedTraders, higherOrderDelay)
+      DistributedTraderFactory(f, nDistributedTraders, higherOrderDelay)
       //, AggregateTraderFactory(f, nDistributedTraders, higherOrderDelay)
       )
     )
@@ -65,6 +66,7 @@ object MoneyMaker {
    * markets like the sinusoidal markets. */
   def main(args: Array[String]) {
     setSeed(System.currentTimeMillis)
+
     // Get the profits of all the traders using the same markets each.
     def getProfits(): Lold = {
       val traderMarketCombos: List[List[Trader]] = getNewTraders()
@@ -74,19 +76,18 @@ object MoneyMaker {
           traderMarketCombos foreach
             (traders => traders foreach (t => t.tryToTrade()))
         })
-      traderMarketCombos foreach (ts =>
-        ts foreach (t =>
-          println(s"$t: made ${t.nTradesTried} trade calls at ${t.m}")))
       traderMarketCombos map (traders =>
         traders map (t => t.moneyLeft)
       )
     }
+
     def averageProfits(): Lold = {
       def sum2d(lst1: Lold, lst2: Lold): Lold = {
         (lst1 zip lst2) map {
           case (l1, l2) => (l1 zip l2) map { case (d1, d2) => d1 + d2 }
         }
       }
+
       def scale2d(lst: Lold, factor: Double): Lold = {
         lst map (l => l map (d => factor * d))
       }
@@ -96,8 +97,10 @@ object MoneyMaker {
         markets foreach (m => m.reset())
         profits = sum2d(profits, getProfits)
       }
+
       scale2d(profits, 1.0 / NTrials.toDouble)
     }
+
     def printProfits(profits: Lold): Unit = {
       println("Below are the returns for each trader at each market, with" +
         "the following parameters:")
@@ -111,6 +114,32 @@ object MoneyMaker {
         }
       }
     }
+
+    // Get one instance of the traders that have traded.
+    def getSampleTraders(): List[Trader] = {
+      markets foreach (m => m.reset())
+      val traderMarketCombos: List[List[Trader]] = getNewTraders()
+      (1 to simDuration) foreach
+        (_ => {
+          markets foreach (m => m.update())
+          traderMarketCombos foreach
+            (traders => traders foreach (t => t.tryToTrade()))
+        })
+      traderMarketCombos.flatten
+    }
+
+    def displaySample(traders: List[Trader]): Unit = {
+      /*
+      traders foreach (t => {
+        Plotter.plotTraderHistory(t)
+      })
+      traders foreach (t =>
+        println(s"$t: made ${t.nTradesTried} trade calls at ${t.m}"))
+*/
+      Plotter.plotTraderHistory(traders.head)
+    }
+
     printProfits(averageProfits())
+    displaySample(getSampleTraders())
   }
 }

@@ -4,22 +4,30 @@ import defs._
 package trader {
   // A trader buys and sells bitcoins in an attempt to make money
   trait Trader { 
+    // Where the trader trades
     val m: Market
-    var nTT: Int = 0 // how many times was "trade()" actualy called?
 
-    // Tells the trader to try trading some money
-    def trade(): Unit
+    /* How many times did the trader go to the market?
+     * i.e. # times trade() was called */
+    var nTradesTried: Int = 0
 
+    /* Tell the trader to try to go to the market and trade. May not actually
+     * trade because the market (e.g.) may be closed. */
     def tryToTrade(): Unit = {
       if (m.isOpen) {
-        nTT += 1
+        nTradesTried += 1
         trade()
       }
     }
 
-    def nTradesTried = nTT
+    // Tells the trader to try trading some money. Assumes the market is open.
+    def trade(): Unit
 
-    // Returns the amount of money left (capital not invested + money made)
+    // A log of past transactions
+    def history: TraderHistory
+
+    // Returns the amount of money left if the trader were to cash out now (or
+    // right when the market has closed)
     def moneyLeft: Double
   }
 

@@ -36,6 +36,8 @@ package trader {
       traders foreach (t => t.trade())
     }
 
+    def history: List[Transaction] = (traders flatMap (t => t.history)).toList
+
     def moneyLeft = {
       def sum(xs: ArrayBuffer[Double]): Double = (0.0 /: xs)(_+_)
       sum(traders map (t => t.moneyLeft))

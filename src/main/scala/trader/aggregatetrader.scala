@@ -57,7 +57,7 @@ package trader {
             return ()
           }
           val trans = sellQuote(amount)
-          t.updateBTCsAndCash(trans)
+          t.updateBank(trans)
           t.updateAfterSell(trans)
         }
 
@@ -69,7 +69,7 @@ package trader {
             return ()
           }
           val trans = buyQuote(amount)
-          t.updateBTCsAndCash(trans)
+          t.updateBank(trans)
           t.updateAfterBuy(trans)
         }
 

@@ -20,14 +20,18 @@ package market {
     // Get a predicted transaction if you were to buy [amount] worth of BTC
     def quoteToBuyCash(amount: Double, currency: String): Transaction
 
-    // Update the information about this market.
+    // Update the information about this market. Call this before other methods
+    // if the market just opened up.
     def update(): Unit
 
-    // Returns true iff the market is still . If not, do not call any other
+    // Returns true iff the market is still open. If not, do not call any other
     // method besides open()
     def isOpen(): Boolean
 
     // Open up the market for the first time (i.e. initialize things.)
     def open(): Unit
+
+    // History of all the bitcoin statistics
+    def history: MarketHistory
   }
 }
