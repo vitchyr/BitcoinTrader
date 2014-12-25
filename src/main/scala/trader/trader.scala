@@ -34,7 +34,7 @@ package trader {
     def moneyLeft: Double
 
     /* Returns the percentage that the captial changed. */
-    def returns: Double = moneyLeft / initialCash * 100
+    def returns: Double = moneyLeft / initialCash * 100.0
 
     /* The name of this type of trader. Don't override toString because the
      * default toString is nice for debugging. */
