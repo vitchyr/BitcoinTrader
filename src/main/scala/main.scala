@@ -19,9 +19,9 @@ object MoneyMaker {
   val sellPercent = 0.00
   val buyPercent = 0.03
   val higherOrderDelay = 15 // number of updates between each subinstance
-  val minRisingSlope = 5
-  val maxDroppingSlope = -5
-  val minTurnChange = 3
+  val minRisingSlope = 3
+  val maxDroppingSlope = -3
+  val minTurnChange = 1
 
   type Lold = List[List[Double]]
 
@@ -36,13 +36,13 @@ object MoneyMaker {
     )
   val simpleFactories =
     List(
-      RandomTraderFactory
+      //RandomTraderFactory
       //, StubbornTraderFactory(sellPercent)
       //, ReluctantTraderFactory(maxNUpdates, sellPercent)
       //, LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
       //, LowMeanStubbornTraderFactory(windowSize, buyPercent)
       //, LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent)
-      , TurnTraderFactory(windowSize, minRisingSlope, maxDroppingSlope,
+       TurnTraderFactory(windowSize, minRisingSlope, maxDroppingSlope,
           minTurnChange)
     )
   val traderFactories = simpleFactories ::: (simpleFactories flatMap
@@ -141,12 +141,12 @@ object MoneyMaker {
         println(s"$t: made ${t.nTradesTried} trade calls at ${t.m}")
         if (t.cashLostToRounding > 0.0) {
           println(s"[Warning] Due to rounding, ${t.name} lost" +
-            f" ${t.cashLostToRounding}%3.2f" +
+            f" ${t.cashLostToRounding}%.2f" +
             s" of ${t.currency}.")
         }
         if (t.btcLostToRounding > 0.0) {
           println(s"[Warning] Due to rounding, ${t.name} lost" +
-            f"${t.btcLostToRounding}%3.2f" +
+            f"${t.btcLostToRounding}%.2f" +
              " of BTC.")
         }
       })

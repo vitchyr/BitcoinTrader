@@ -27,20 +27,30 @@ package trader {
     private var slope: Double = 0
     private var lastSlope: Double = 0
 
+    // experimental stuff
+    private var price: Double = 0
+    private var lastPrice: Double = 0
+    private var boughtSomething: Boolean = false
+
     private val Up = 1
     private val Down = 0
 
     def update(): Unit = {
-      val price = btcPrice
-      pricesSeen.enqueue(price)
+      val newPrice = btcPrice
+      pricesSeen.enqueue(newPrice)
       nData += 1
       if (nData >= windowSize) {
         pricesSeen.dequeue
         val (_, b) = Regression.linSpaceFit(pricesSeen.toList)
         if (nData > windowSize) {
           lastSlope = slope
+          lastPrice = price
         }
         slope = b
+        price = price
+        println(s"Time ${nData - 1}: $slope")
+      } else {
+        lastPrice = newPrice
       }
     }
 
@@ -52,13 +62,14 @@ package trader {
     }
 
     private def turned(direction: Int) = direction match {
-       case Up => lastSlope - slope > minTurnChange
-       case Down => slope - lastSlope > minTurnChange
+       case Up => slope - lastSlope > minTurnChange || slope > 0
+       case Down => lastSlope - slope > minTurnChange || slope < 0
        case _ => sys.error(s"TurnTrader.turned: invalid direction: $direction")
     }
 
     def amountToSell: Double = {
       if (nData > windowSize && wasGoing(Up) && turned(Down)) {
+        println(s"SELL $bitcoins BTCs! Time is $nData")
         return bitcoins
       }
       0.0
@@ -66,14 +77,21 @@ package trader {
 
     def amountToBuy: Double = {
       if (nData > windowSize && wasGoing(Down) && turned(Up)) {
+        println(s"BUY $maxBTCsCanBuy BTCs! Time is $nData")
         return maxBTCsCanBuy
       }
+      /*
+      if (nData > windowSize && !boughtSomething) { // tired of waiting
+        println(s"Let's start! But $maxBTCsCanBuy BTCs. Time is $nData")
+        return maxBTCsCanBuy
+      }
+      */
       0.0
     }
 
     def updateAfterSell(trans: Transaction): Unit = ()
 
-    def updateAfterBuy(trans: Transaction): Unit = ()
+    def updateAfterBuy(trans: Transaction): Unit = boughtSomething = true
 
     def name = "Turn Trader"
   }
