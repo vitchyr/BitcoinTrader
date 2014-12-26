@@ -17,13 +17,14 @@ object MoneyMaker {
   // Parameters for factories
   val maxNUpdates = 30 // numberof updates until reluctant trader gives up
   val nDistributedTraders = 10
-  val windowSize = 7
+  val windowSize = 19
   val sellPercent = 0.00
   val buyPercent = 0.03
   val higherOrderDelay = 15 // number of updates between each subinstance
-  val minRisingSlope = 0.0
-  val maxDroppingSlope = 0.0
-  val minTurnChange = 1.0
+  val minRisingSlope = 0.10394231972788748
+  val maxDroppingSlope = 2.446649732560296
+  val minTurnChange = 1.2337791754662915
+  //(19,0.10394231972788748,2.446649732560296,1.2337791754662915)
 
   type Lold = List[List[Double]]
 
@@ -218,7 +219,7 @@ object MoneyMaker {
 
   def main(args: Array[String]) {
     setSeed(System.currentTimeMillis)
-    //evaluateTraders()
-    paramSelect()
+    evaluateTraders()
+    //paramSelect()
   }
 }
