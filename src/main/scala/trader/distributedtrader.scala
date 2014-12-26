@@ -27,6 +27,8 @@ package trader {
 
     private var nUpdates: Int = 0
 
+    private def sum(xs: ArrayBuffer[Double]): Double = (0.0 /: xs)(_+_)
+
     def trade(): Unit = {
       if (delay != 0 && (nUpdates % delay) == 0) {
         if (nUpdates < delay * allTraders.length) {
@@ -39,16 +41,18 @@ package trader {
 
     def history: List[Transaction] = (traders flatMap (t => t.history)).toList
 
-    def moneyLeft = {
-      def sum(xs: ArrayBuffer[Double]): Double = (0.0 /: xs)(_+_)
-      sum(traders map (t => t.moneyLeft))
-    }
+    def moneyLeft = sum(traders map (t => t.moneyLeft))
 
     def name =
       if (traders.length == 0)
         "Generic Distributed Trader"
       else
         s"Distributed '${traders.head.name}' Trader"
+
+    def cashLostToRounding: Double =
+      sum(traders map (t => t.cashLostToRounding))
+    def btcLostToRounding: Double =
+      sum(traders map (t => t.btcLostToRounding))
   }
 
   class DistributedTraderFactory(

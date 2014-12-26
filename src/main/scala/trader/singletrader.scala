@@ -12,12 +12,15 @@ package trader {
   trait SingleTrader extends Trader { 
     var cash: Double
     var bitcoins: Double
-    protected val currency: String
+    val currency: String
 
     private var _moneyLeft = cash
     protected val initialCash = cash
 
     private val _history: ArrayBuffer[Transaction] = new ArrayBuffer()
+
+    var _cashLostToRounding: Double = 0
+    var _btcLostToRounding: Double = 0
 
     /*************************
      ** Method to implement **
@@ -105,7 +108,7 @@ package trader {
       val trans = m.sell(amount, currency)
       updateBank(trans)
       if (amount == oldBitcoins && bitcoins != 0.0) {
-        println(s"[Warning] Due to rounding, losing $bitcoins of BTC.")
+        _btcLostToRounding += bitcoins
         bitcoins = 0.0
       }
       updateAfterSell(trans)
@@ -123,7 +126,7 @@ package trader {
       val trans = m.buy(amount, currency)
       updateBank(trans)
       if (amount == oldMax && cash != 0.0) {
-        println(s"[Warning] Due to rounding, losing $cash of $currency.")
+        _cashLostToRounding += cash
         cash = 0.0
       }
       updateAfterBuy(trans)
@@ -145,6 +148,9 @@ package trader {
 
     // Returns the amount of money left (capital not invested + money made)
     def moneyLeft: Double = _moneyLeft
+
+    def cashLostToRounding: Double = _cashLostToRounding
+    def btcLostToRounding: Double = _btcLostToRounding
   }
 
   trait SingleTraderFactory extends TraderFactory {

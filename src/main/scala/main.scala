@@ -13,12 +13,15 @@ object MoneyMaker {
   val NTrials = 1; // how many simulations to run
 
   // Parameters for factories
-  val maxNumUpdates = 30 // numberof updates until reluctant trader gives up
+  val maxNUpdates = 30 // numberof updates until reluctant trader gives up
   val nDistributedTraders = 10
-  val meanWindowSize = 50
+  val windowSize = 7
   val sellPercent = 0.00
   val buyPercent = 0.03
   val higherOrderDelay = 15 // number of updates between each subinstance
+  val minRisingSlope = 5
+  val maxDroppingSlope = -5
+  val minTurnChange = 3
 
   type Lold = List[List[Double]]
 
@@ -34,11 +37,13 @@ object MoneyMaker {
   val simpleFactories =
     List(
       RandomTraderFactory
-      , StubbornTraderFactory(sellPercent)
-      , ReluctantTraderFactory(maxNumUpdates, sellPercent)
-      //, LowHighMeanTraderFactory(meanWindowSize, buyPercent, sellPercent)
-      //, LowMeanStubbornTraderFactory(meanWindowSize, buyPercent)
-      //, LowMeanReluctantTraderFactory(maxNumUpdates, meanWindowSize, buyPercent)
+      //, StubbornTraderFactory(sellPercent)
+      //, ReluctantTraderFactory(maxNUpdates, sellPercent)
+      //, LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
+      //, LowMeanStubbornTraderFactory(windowSize, buyPercent)
+      //, LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent)
+      , TurnTraderFactory(windowSize, minRisingSlope, maxDroppingSlope,
+          minTurnChange)
     )
   val traderFactories = simpleFactories ::: (simpleFactories flatMap
     (f => List(
@@ -132,8 +137,19 @@ object MoneyMaker {
       traders foreach (t => {
         Plotter.plotTraderHistory(t)
       })
-      traders foreach (t =>
-        println(s"$t: made ${t.nTradesTried} trade calls at ${t.m}"))
+      traders foreach (t => {
+        println(s"$t: made ${t.nTradesTried} trade calls at ${t.m}")
+        if (t.cashLostToRounding > 0.0) {
+          println(s"[Warning] Due to rounding, ${t.name} lost" +
+            f" ${t.cashLostToRounding}%3.2f" +
+            s" of ${t.currency}.")
+        }
+        if (t.btcLostToRounding > 0.0) {
+          println(s"[Warning] Due to rounding, ${t.name} lost" +
+            f"${t.btcLostToRounding}%3.2f" +
+             " of BTC.")
+        }
+      })
     }
 
     printReturns(averageReturns())

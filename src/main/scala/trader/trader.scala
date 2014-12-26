@@ -7,8 +7,8 @@ package trader {
     // how much money this trader started off with.
     protected val initialCash: Double
 
-    // Where the trader trades
-    val m: Market
+    val m: Market // Where the trader trades
+    val currency: String // What currency the trader trades in.
 
     /* How many times did the trader go to the market?
      * i.e. # times trade() was called */
@@ -39,6 +39,10 @@ package trader {
     /* The name of this type of trader. Don't override toString because the
      * default toString is nice for debugging. */
     def name: String
+
+    // Amount of cash/bitcoins lost due to rounding
+    def cashLostToRounding: Double
+    def btcLostToRounding: Double
   }
 
   trait TraderFactory {
