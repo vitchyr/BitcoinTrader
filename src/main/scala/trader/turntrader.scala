@@ -47,16 +47,14 @@ package trader {
           lastPrice = price
         }
         slope = b
-        price = price
-        println(s"Time ${nData - 1}: $slope")
-      } else {
-        lastPrice = newPrice
+        price = newPrice
+        //println(s"Time ${nData - 1}: $slope")
       }
     }
 
     private def wasGoing(direction: Int) = direction match {
-       case Up => slope > minRisingSlope
-       case Down => slope < maxDroppingSlope
+       case Up => lastSlope > minRisingSlope
+       case Down => lastSlope < maxDroppingSlope
        case _ =>
          sys.error(s"TurnTrader.wasGoing: invalid direction: $direction")
     }
@@ -64,12 +62,17 @@ package trader {
     private def turned(direction: Int) = direction match {
        case Up => slope - lastSlope > minTurnChange || slope > 0
        case Down => lastSlope - slope > minTurnChange || slope < 0
+      /*
+       case Up => price > lastPrice
+       case Down => price < lastPrice
+       */
        case _ => sys.error(s"TurnTrader.turned: invalid direction: $direction")
     }
 
     def amountToSell: Double = {
       if (nData > windowSize && wasGoing(Up) && turned(Down)) {
-        println(s"SELL $bitcoins BTCs! Time is $nData")
+        //println(s"SELL $bitcoins BTCs! Time is $nData")
+        //println(s"\tThe old slope was $lastSlope. Now it's $slope")
         return bitcoins
       }
       0.0
@@ -77,7 +80,8 @@ package trader {
 
     def amountToBuy: Double = {
       if (nData > windowSize && wasGoing(Down) && turned(Up)) {
-        println(s"BUY $maxBTCsCanBuy BTCs! Time is $nData")
+        //println(s"BUY $maxBTCsCanBuy BTCs! Time is $nData")
+        //println(s"\tThe old slope was $lastSlope. Now it's $slope")
         return maxBTCsCanBuy
       }
       /*

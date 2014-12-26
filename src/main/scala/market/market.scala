@@ -33,5 +33,8 @@ package market {
 
     // History of all the bitcoin statistics
     def history: MarketHistory
+
+    // Reset the market as if we had never used it before
+    def reset(): Unit
   }
 }

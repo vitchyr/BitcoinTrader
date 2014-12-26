@@ -3,6 +3,8 @@ import trader._
 import plotter.Plotter
 import scala.util.Random.setSeed
 import scala.util.Random.nextInt
+import scala.util.Random.nextDouble
+import heuristics._
 
 object MoneyMaker {
   // Global settings
@@ -19,9 +21,9 @@ object MoneyMaker {
   val sellPercent = 0.00
   val buyPercent = 0.03
   val higherOrderDelay = 15 // number of updates between each subinstance
-  val minRisingSlope = 3
-  val maxDroppingSlope = -3
-  val minTurnChange = 1
+  val minRisingSlope = 0.0
+  val maxDroppingSlope = 0.0
+  val minTurnChange = 1.0
 
   type Lold = List[List[Double]]
 
@@ -36,13 +38,13 @@ object MoneyMaker {
     )
   val simpleFactories =
     List(
-      //RandomTraderFactory
+      RandomTraderFactory
       //, StubbornTraderFactory(sellPercent)
       //, ReluctantTraderFactory(maxNUpdates, sellPercent)
       //, LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
       //, LowMeanStubbornTraderFactory(windowSize, buyPercent)
       //, LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent)
-       TurnTraderFactory(windowSize, minRisingSlope, maxDroppingSlope,
+      , TurnTraderFactory(windowSize, minRisingSlope, maxDroppingSlope,
           minTurnChange)
     )
   val traderFactories = simpleFactories ::: (simpleFactories flatMap
@@ -65,13 +67,11 @@ object MoneyMaker {
   def simDuration =
     MinSimDuration + nextInt(MaxSimDuration - MinSimDuration + 1)
 
-  /* main checks the returns made by each trader on different markets. This is
+  /* evaluateTraders evaluates each trader on different markets. This is
    * averaged of [NTrials]. Each simulation lasts [simDuration] time steps,
    * which is designed to be random so that different results happen from
    * markets like the sinusoidal markets. */
-  def main(args: Array[String]) {
-    setSeed(System.currentTimeMillis)
-
+  def evaluateTraders(): Unit = {
     // Get the returns of all the traders using the same markets each.
     def getReturns(): Lold = {
       val traderMarketCombos: List[List[Trader]] = getNewTraders()
@@ -154,5 +154,71 @@ object MoneyMaker {
 
     printReturns(averageReturns())
     displaySample(getSampleTraders())
+  }
+
+  /* paramSelect uses heuristic algorithms to figure out the best parameters
+   * for selected traders. */
+  def paramSelect(): Unit = {
+    type TTParam = Tuple4[Int, Double, Double, Double]
+
+    def costOf(param: TTParam): Double = {
+      def returnsOf(t: Trader): Double = {
+        t.m.reset()
+        (1 to simDuration) foreach ( _ => { t.m.update(); t.tryToTrade()})
+        t.returns 
+      }
+
+      val r = returnsOf(new TurnTrader(
+        CoinDeskMarket,
+        capital,
+        currency,
+        param._1,
+        param._2,
+        param._3,
+        param._4)
+      )
+      /* Don't reward something that doesn't invest. Also, negate so that low
+       * is good */
+      if (r == 100.0) 0.0 else -r 
+    }
+
+    val stepSize = 1
+
+    def neighborOf(param: TTParam): TTParam = {
+      val p1 = param._1 + stepSize*(nextInt(3) - 1)
+      val p2 = param._2 + stepSize*(nextDouble - 0.5)
+      val p3 = param._3 + stepSize*(nextDouble - 0.5)
+      val p4 = param._4 + stepSize*(nextDouble - 0.5)
+      (if (p1 < 0) 0 else p1,
+        if (p2 < 0) 0 else p2,
+        if (p3 < 0) 0 else p3,
+        if (p4 < 0) 0 else p4)
+    }
+    
+    /*
+    val initSoln = (windowSize, minRisingSlope, maxDroppingSlope,
+        minRisingSlope)
+    */
+    val initSoln = (10,0.3850272453276844,0.6953361573251626,0.3580603780969772)
+    val initTemp = 450.0
+    val alpha = 0.95
+    val maxTime = 1000
+
+    val SA = new Annealing[TTParam](
+        costOf _,
+        neighborOf _,
+        initSoln,
+        initTemp,
+        alpha,
+        maxTime)
+    SA.run()
+    println(SA.bestSoln)
+    println(costOf(SA.bestSoln))
+  }
+
+  def main(args: Array[String]) {
+    setSeed(System.currentTimeMillis)
+    //evaluateTraders()
+    paramSelect()
   }
 }
