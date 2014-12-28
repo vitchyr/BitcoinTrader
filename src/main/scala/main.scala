@@ -26,8 +26,13 @@ object MoneyMaker {
   val minTurnChange = 1.2337791754662915
   //(19,0.10394231972788748,2.446649732560296,1.2337791754662915)
 
+  // Params for CoinDesk
+  val nDrop: Int = 0
+  val nDropFromEnd: Int = 50
+
   type Lold = List[List[Double]]
 
+  val cdMarket = new CoinDeskMarket(nDrop, nDropFromEnd)
   val markets: List[FakeMarket] =
     List(
       //RandomMarket
@@ -35,7 +40,7 @@ object MoneyMaker {
       //, NoisyMarket(SinMarket)
       //, CosMarket
       //, NoisyMarket(CosMarket)
-      CoinDeskMarket
+      cdMarket
     )
   val simpleFactories =
     List(
@@ -170,7 +175,7 @@ object MoneyMaker {
       }
 
       val r = returnsOf(new TurnTrader(
-        CoinDeskMarket,
+        cdMarket,
         capital,
         currency,
         param._1,
@@ -196,11 +201,11 @@ object MoneyMaker {
         if (p4 < 0) 0 else p4)
     }
     
-    /*
     val initSoln = (windowSize, minRisingSlope, maxDroppingSlope,
-        minRisingSlope)
-    */
+        minTurnChange)
+    /*
     val initSoln = (10,0.3850272453276844,0.6953361573251626,0.3580603780969772)
+    */
     val initTemp = 450.0
     val alpha = 0.95
     val maxTime = 1000
@@ -220,6 +225,6 @@ object MoneyMaker {
   def main(args: Array[String]) {
     setSeed(System.currentTimeMillis)
     evaluateTraders()
-    //paramSelect()
+    paramSelect()
   }
 }

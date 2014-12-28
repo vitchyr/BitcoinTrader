@@ -21,7 +21,7 @@ package heuristics {
       1 to maxTime foreach (_ => {
         val nextSoln = randNeighborOf(currSoln)
         val nextCost = costOf(nextSoln)
-        println(s"New soln of $nextSoln has a cost of $nextCost")
+        //println(s"New soln of $nextSoln has a cost of $nextCost")
 
         if (nextCost < bestCost) {
           _bestSoln = nextSoln
