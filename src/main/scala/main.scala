@@ -21,9 +21,9 @@ object MoneyMaker {
   val sellPercent = 0.00
   val buyPercent = 0.03
   val higherOrderDelay = 15 // number of updates between each subinstance
-  val minRisingSlope = 0.10394231972788748
-  val maxDroppingSlope = 2.446649732560296
-  val minTurnChange = 1.2337791754662915
+  val minRisingSlope: Double = 0.0//0.10394231972788748
+  val maxDroppingSlope: Double = 0.0//2.446649732560296
+  val minTurnChange: Double = 1
   //(19,0.10394231972788748,2.446649732560296,1.2337791754662915)
 
   // Params for CoinDesk
@@ -162,10 +162,10 @@ object MoneyMaker {
     displaySample(getSampleTraders())
   }
 
+  type TTParam = Tuple4[Int, Double, Double, Double]
   /* paramSelect uses heuristic algorithms to figure out the best parameters
    * for selected traders. */
-  def paramSelect(): Unit = {
-    type TTParam = Tuple4[Int, Double, Double, Double]
+  def paramSelect(initSoln: TTParam): TTParam = {
 
     def costOf(param: TTParam): Double = {
       def returnsOf(t: Trader): Double = {
@@ -175,7 +175,7 @@ object MoneyMaker {
       }
 
       val r = returnsOf(new TurnTrader(
-        cdMarket,
+        new CoinDeskMarket(nDrop, nDropFromEnd),
         capital,
         currency,
         param._1,
@@ -201,14 +201,12 @@ object MoneyMaker {
         if (p4 < 0) 0 else p4)
     }
     
-    val initSoln = (windowSize, minRisingSlope, maxDroppingSlope,
-        minTurnChange)
     /*
     val initSoln = (10,0.3850272453276844,0.6953361573251626,0.3580603780969772)
     */
     val initTemp = 450.0
-    val alpha = 0.95
-    val maxTime = 1000
+    val alpha = 0.999
+    val maxTime = 10000
 
     val SA = new Annealing[TTParam](
         costOf _,
@@ -218,13 +216,20 @@ object MoneyMaker {
         alpha,
         maxTime)
     SA.run()
-    println(SA.bestSoln)
     println(costOf(SA.bestSoln))
+    SA.bestSoln
   }
 
   def main(args: Array[String]) {
     setSeed(System.currentTimeMillis)
-    evaluateTraders()
-    paramSelect()
+    //evaluateTraders()
+    val initSoln = (windowSize, minRisingSlope, maxDroppingSlope,
+        minTurnChange)
+    val nextSoln = paramSelect(initSoln)
+    println(nextSoln)
+    /*
+    val finalSoln = paramSelect(nextSoln)
+    println(finalSoln)
+    */
   }
 }
