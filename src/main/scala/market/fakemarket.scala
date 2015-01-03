@@ -21,9 +21,6 @@ package market {
       open()
     }
 
-    // in milliseconds
-    def time(): Long = System.currentTimeMillis
-
     private def lastBuyRate: Double = savedBuyRate match {
       case Some(rate) => rate
       case None => sys.error("Market is not open. Try calling open()" +
@@ -63,7 +60,7 @@ package market {
       }
     }
 
-    def isOpen(): Boolean = savedBuyRate match {
+    def isOpen: Boolean = savedBuyRate match {
       case Some(_) => true
       case None => false
     }
