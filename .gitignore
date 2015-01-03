@@ -1,3 +1,4 @@
+.secret
 *.class
 *.swp
 target/
