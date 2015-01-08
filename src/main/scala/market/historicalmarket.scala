@@ -5,8 +5,7 @@ package market {
   // Recreate a market from the history of another market
   class HistoricalMarket(m: Market) extends FakeMarket {
     private var i = 0
-    private val h = m.history.toArray
-    println(h.length)
+    private lazy val h = m.history.toArray
 
     def iterator = new Iterator[Double] {
       def hasNext = i < h.length

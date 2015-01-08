@@ -43,8 +43,8 @@ object MoneyMaker {
         //, NoisyMarket(SinMarket)
         //, CosMarket
         //, NoisyMarket(CosMarket)
-        //, cdMarket
-        , histCBMarket
+        , cdMarket
+        //, histCBMarket
       )
     markets foreach (m => m.open())
     val simpleFactories =
@@ -190,8 +190,8 @@ object MoneyMaker {
             param._3,
             param._4)
           )
-          /* Don't reward something that doesn't invest. Also, negate so that low
-           * is good */
+          /* Don't reward something that doesn't invest. Also, negate so that
+           * high returns are good */
           if (r == 100.0) 0.0 else -r
         }
 
@@ -226,6 +226,7 @@ object MoneyMaker {
       val initSoln = (windowSize, minRisingSlope, maxDroppingSlope,
           minTurnChange)
       val newSoln = paramSelect(initSoln)
+      histCBMarket.reset()
       evaluateTraders(() => List(List(
         new TurnTrader(
           histCBMarket,
@@ -240,8 +241,8 @@ object MoneyMaker {
 
     // "main" for this function
     setSeed(System.currentTimeMillis)
-    //evaluateTraders(getNewTraders)
-    heuristicMain()
+    evaluateTraders(getNewTraders)
+    //heuristicMain()
   }
 
   def coinBaseMain(): Unit = {
