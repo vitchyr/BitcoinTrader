@@ -8,6 +8,7 @@ import org.joda.money.Money
 import scala.collection.JavaConversions._
 
 package market { 
+  // A wrapper around the coinbase java API
   object CoinbaseMarket extends Market {
     val Currency = "USD"
     var cb: Coinbase = _ // the CoinbaseBuilder
@@ -91,5 +92,7 @@ package market {
     }
 
     def reset(): Unit = ()
+
+    override def toString = "Coinbase Market"
   }
 }

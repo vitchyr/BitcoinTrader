@@ -35,14 +35,16 @@ object MoneyMaker {
     type Lold = List[List[Double]]
 
     val cdMarket = new CoinDeskMarket(nDrop, nDropFromEnd)
+    val histCBMarket = new HistoricalMarket(CoinbaseMarket)
     val markets: List[FakeMarket] =
       List(
-        //RandomMarket
+        RandomMarket
         //, SinMarket
         //, NoisyMarket(SinMarket)
         //, CosMarket
         //, NoisyMarket(CosMarket)
-        cdMarket
+        //, cdMarket
+        , histCBMarket
       )
     markets foreach (m => m.open())
     val simpleFactories =
@@ -117,7 +119,7 @@ object MoneyMaker {
 
       def printReturns(returns: Lold): Unit = {
         println("Below are the returns for each trader at each market, with" +
-          "the following parameters:")
+          " the following parameters:")
         println(s"\tSimulation duration = random value in" +
           s" [$MinSimDuration, $MaxSimDuration]")
         println(s"\tNumber of simulations ran = $NTrials")
@@ -147,7 +149,7 @@ object MoneyMaker {
           Plotter.plotTraderHistory(t)
         })
         traders foreach (t => {
-          println(s"$t: made ${t.nTradesTried} trade calls at ${t.m}")
+          println(s"$t: went to ${t.m} ${t.nTradesTried} times")
           if (t.cashLostToRounding > 0.0) {
             println(s"[Warning] Due to rounding, ${t.name} lost" +
               f" ${t.cashLostToRounding}%.2f" +
@@ -165,81 +167,81 @@ object MoneyMaker {
       displaySample(getSampleTraders())
     }
 
-    type TTParam = Tuple4[Int, Double, Double, Double]
-    /* paramSelect uses heuristic algorithms to figure out the best parameters
-     * for selected traders. */
-    def paramSelect(initSoln: TTParam): TTParam = {
 
-      def costOf(param: TTParam): Double = {
-        def returnsOf(t: Trader): Double = {
-          t.m.reset()
-          (1 to simDuration) foreach ( _ => { t.m.update(); t.tryToTrade()})
-          t.returns
+    def heuristicMain(): Unit = {
+      type TTParam = Tuple4[Int, Double, Double, Double]
+      /* paramSelect uses heuristic algorithms to figure out the best parameters
+       * for selected traders. */
+      def paramSelect(initSoln: TTParam): TTParam = {
+
+        def costOf(param: TTParam): Double = {
+          def returnsOf(t: Trader): Double = {
+            t.m.reset()
+            (1 to simDuration) foreach ( _ => { t.m.update(); t.tryToTrade()})
+            t.returns
+          }
+
+          val r = returnsOf(new TurnTrader(
+            new CoinDeskMarket(nDrop, nDropFromEnd),
+            capital,
+            currency,
+            param._1,
+            param._2,
+            param._3,
+            param._4)
+          )
+          /* Don't reward something that doesn't invest. Also, negate so that low
+           * is good */
+          if (r == 100.0) 0.0 else -r
         }
 
-        val r = returnsOf(new TurnTrader(
-          new CoinDeskMarket(nDrop, nDropFromEnd),
+        val stepSize = 1
+
+        def neighborOf(param: TTParam): TTParam = {
+          val p1 = param._1 + stepSize*(nextInt(3) - 1)
+          val p2 = param._2 + stepSize*(nextDouble - 0.5)
+          val p3 = param._3 + stepSize*(nextDouble - 0.5)
+          val p4 = param._4 + stepSize*(nextDouble - 0.5)
+          (if (p1 < 0) 0 else p1,
+            if (p2 < 0) 0 else p2,
+            if (p3 < 0) 0 else p3,
+            if (p4 < 0) 0 else p4)
+        }
+
+        val initTemp = 450.0
+        val alpha = 0.99
+        val maxTime = 1000
+
+        val SA = new Annealing[TTParam](
+            costOf _,
+            neighborOf _,
+            initSoln,
+            initTemp,
+            alpha,
+            maxTime)
+        SA.run()
+        SA.bestSoln
+      }
+
+      val initSoln = (windowSize, minRisingSlope, maxDroppingSlope,
+          minTurnChange)
+      val newSoln = paramSelect(initSoln)
+      evaluateTraders(() => List(List(
+        new TurnTrader(
+          histCBMarket,
           capital,
           currency,
-          param._1,
-          param._2,
-          param._3,
-          param._4)
-        )
-        /* Don't reward something that doesn't invest. Also, negate so that low
-         * is good */
-        if (r == 100.0) 0.0 else -r
-      }
-
-      val stepSize = 1
-
-      def neighborOf(param: TTParam): TTParam = {
-        val p1 = param._1 + stepSize*(nextInt(3) - 1)
-        val p2 = param._2 + stepSize*(nextDouble - 0.5)
-        val p3 = param._3 + stepSize*(nextDouble - 0.5)
-        val p4 = param._4 + stepSize*(nextDouble - 0.5)
-        (if (p1 < 0) 0 else p1,
-          if (p2 < 0) 0 else p2,
-          if (p3 < 0) 0 else p3,
-          if (p4 < 0) 0 else p4)
-      }
-
-      /*
-      val initSoln = (10,0.3850272453276844,0.6953361573251626,0.3580603780969772)
-      */
-      val initTemp = 450.0
-      val alpha = 0.99
-      val maxTime = 1000
-
-      val SA = new Annealing[TTParam](
-          costOf _,
-          neighborOf _,
-          initSoln,
-          initTemp,
-          alpha,
-          maxTime)
-      SA.run()
-      println(costOf(SA.bestSoln))
-      SA.bestSoln
+          newSoln._1,
+          newSoln._2,
+          newSoln._3,
+          newSoln._4))))
+      println(s"New solution = $newSoln")
     }
 
     // "main" for this function
     setSeed(System.currentTimeMillis)
-    /*
-    evaluateTraders(getNewTraders)
-    */
-    val initSoln = (windowSize, minRisingSlope, maxDroppingSlope,
-        minTurnChange)
-    val newSoln = paramSelect(initSoln)
-    evaluateTraders(() => List(List(
-      new TurnTrader(
-        new CoinDeskMarket(366 - nDropFromEnd, 0),
-        capital,
-        currency,
-        newSoln._1,
-        newSoln._2,
-        newSoln._3,
-        newSoln._4))))
+    //evaluateTraders(getNewTraders)
+    heuristicMain()
   }
 
   def coinBaseMain(): Unit = {
@@ -252,7 +254,7 @@ object MoneyMaker {
   }
 
   def main(args: Array[String]) {
-    //fakeMarketsMain()
-    coinBaseMain()
+    fakeMarketsMain()
+    //coinBaseMain()
   }
 }

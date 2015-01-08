@@ -31,7 +31,6 @@ package market {
 
     private var i: Int = 0 // index into data where we currently are.
     private val data: Array[Double] = getCoinDeskDataFrom(dataFileName)
-    println(data.length)
 
     def iterator = new Iterator[Double] {
       def hasNext = i < data.length
