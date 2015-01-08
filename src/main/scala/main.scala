@@ -248,6 +248,7 @@ object MoneyMaker {
     println(CoinbaseMarket.quoteToBuy(1.0, currency))
     CoinbaseMarket.history foreach println
     CoinbaseMarket.tradeHistory foreach println
+    Plotter.plotTraderHistory(new RandomTrader(CoinbaseMarket, 0, currency))
   }
 
   def main(args: Array[String]) {
