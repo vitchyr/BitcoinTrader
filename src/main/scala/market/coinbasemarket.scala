@@ -1,12 +1,15 @@
 import defs._
 import utils._
 import scala.io.Source
+import com.coinbase.api.entity.Transfer
 import com.coinbase.api.Coinbase
 import com.coinbase.api.CoinbaseBuilder
 import org.joda.money.Money
+import scala.collection.JavaConversions._
 
 package market { 
   object CoinbaseMarket extends Market {
+    val Currency = "USD"
     var cb: Coinbase = _ // the CoinbaseBuilder
     var _isOpen = false
     val fakeTrans = new Transaction(0, 0, 0, "USD")
@@ -17,10 +20,12 @@ package market {
 
     def quoteToSell(amount: Double, currency: String): Transaction = {
       val q = cb.getSellQuote(Money.parse(s"BTC $amount"))
+      /*
       val fees = q.getFees()
       println(s"Sell quote fees = $fees")
       println(s"subtotal = ${q.getSubtotal()}")
       println(s"total = ${q.getTotal()}")
+      */
       new Transaction(
         -amount,
         q.getTotal().getAmount().doubleValue(),
@@ -30,10 +35,6 @@ package market {
 
     def quoteToBuy(amount: Double, currency: String): Transaction = {
       val q = cb.getBuyQuote(Money.parse(s"BTC $amount"))
-      val fees = q.getFees()
-      println(s"Buy quote fees = $fees")
-      println(s"subtotal = ${q.getSubtotal()}")
-      println(s"total = ${q.getTotal()}")
       new Transaction(
         amount,
         -q.getTotal().getAmount().doubleValue(),
@@ -59,11 +60,35 @@ package market {
       cb = new CoinbaseBuilder()
                           .withApiKey(key, secret)
                           .build()
-      val r = cb.getTransactions()
-      println(r.getTotalCount())
+      //val r = cb.getTransactions()
+      //println(r.getTotalCount())
       _isOpen = true
 
-    def history: MarketHistory = List()
+    def history: MarketHistory = {
+      for (p <- cb.getHistoricalPrices().toList) yield {
+        new BitcoinStat(
+          p.getTime().getMillis(),
+          p.getSpotPrice().getAmount().doubleValue())
+      }
+    }
+
+    def tradeHistory: TraderHistory = {
+      for (t <- cb.getTransfers().getTransfers().toList) yield {
+        if (t.getType().toString() == Transfer.Type.SELL.toString()) {
+          new Transaction(
+            -t.getBtc().getAmount().doubleValue(),
+            t.getTotal().getAmount().doubleValue(),
+            t.getPayoutDate().getMillis(),
+            Currency)
+        } else { // bought BTC
+          new Transaction(
+            t.getBtc().getAmount().doubleValue(),
+            -t.getTotal().getAmount().doubleValue(),
+            t.getPayoutDate().getMillis(),
+            Currency)
+        }
+      }
+    }
 
     def reset(): Unit = ()
   }

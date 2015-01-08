@@ -8,8 +8,9 @@ import heuristics._
 
 object MoneyMaker {
   // Global settings
+  val currency = "USD"
+
   def fakeMarketsMain(): Unit = {
-    val currency = "USD"
     val capital = 100000
     val MinSimDuration = 1500; // min time a simulation runs for
     val MaxSimDuration = 2000; // this only matters for fake infinite markets
@@ -243,6 +244,10 @@ object MoneyMaker {
 
   def coinBaseMain(): Unit = {
     CoinbaseMarket.open()
+    println(CoinbaseMarket.quoteToSell(1.0, currency))
+    println(CoinbaseMarket.quoteToBuy(1.0, currency))
+    CoinbaseMarket.history foreach println
+    CoinbaseMarket.tradeHistory foreach println
   }
 
   def main(args: Array[String]) {

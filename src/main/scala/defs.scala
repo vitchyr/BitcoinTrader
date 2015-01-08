@@ -11,6 +11,10 @@ package object defs {
       val time: Long, val currency: String) {
     val dBitcoins = Transaction.roundBtc(dB)
     val dCash = Transaction.roundCash(dC)
+
+    override def toString = s"Transaction @ time $time:" +
+      s"\n\tdBtc: $dB" +
+      s"\n\tdCash: $dC ($currency)"
   }
 
   object Transaction {
@@ -26,7 +30,10 @@ package object defs {
     def roundCash(x: Double): Double = round(x, CashPrecision)
   }
 
-  class BitcoinStat(val time: Double, val buyRate: Double)
+  class BitcoinStat(val time: Double, val price: Double) {
+    override def toString = s"BTC Stat @ time $time:" +
+      s"\n\tprice: $price"
+  }
 
   type TraderHistory = List[Transaction]
   type MarketHistory = List[BitcoinStat]
