@@ -4,10 +4,14 @@ import scala.collection.mutable.ArrayBuffer
 package market { 
   // Fake markets use fake data for the buy/sell prices.
   trait FakeMarket extends Market with Iterable[Double] {
-    private val SellCut: Double = .99
+    private val feeRate: Double = 0.01
+    private val bankCharge: Double = 0.15
     private var savedBuyRate: Option[Double] = None
     private var _history: ArrayBuffer[BitcoinStat] = new ArrayBuffer()
     private var updateIter = -1
+
+    def zeroTrans(currency: String) =
+      new Transaction(0.0, 0.0, updateIter, currency)
 
     // Reset the state of the class as if it had just been initialized
     def resetState(): Unit
@@ -27,27 +31,83 @@ package market {
         " and then calling update().")
     }
 
-    def sell(amount: Double, currency: String): Transaction =
+    /* How much cash the user will get if he sells [amount] in cash worth of
+     * BTCs. Basically, normal amount - fees.
+     *
+     * [amount] should be non-negative. */
+    def cashFromSell(amount: Double): Double = {
+      if (amount < 0) {
+        sys.error("Expected non-negative amount but instead got"+s" $amount\n")
+      } else {
+        amount * (1 - feeRate) - bankCharge
+      }
+    }
+
+    // Inverse of the above function
+    def cashFromSellInv(amount: Double): Double = {
+      if (amount < 0) {
+        sys.error("Expected non-negative amount but instead got"+s" $amount\n")
+      } else {
+        (amount + bankCharge) / (1 - feeRate)
+      }
+    }
+
+    /* How much buying [amount] in cash worth of BTC will actually cost the
+     * user. Basically, normal amount + fees
+     *
+     * [amount] should be non-negative. */
+    def cashFromBuy(amount: Double): Double = {
+      if (amount < 0) {
+        sys.error(s"Expected non-negative amount but instead got $amount\n")
+      } else {
+        amount * (1 + feeRate) + bankCharge
+      }
+    }
+
+    // Inverse of the above function
+    def cashFromBuyInv(amount: Double): Double = {
+      if (amount < 0) {
+        sys.error(s"Expected non-negative amount but instead got $amount\n")
+      } else {
+        (amount - bankCharge) / (1 + feeRate)
+      }
+    }
+
+    def sell(amount: Double, currency: String): Transaction = {
       if (amount <= 0) sys.error(s"Cannot sell $amount BTCs") else
-      new Transaction(-amount, SellCut * amount * lastBuyRate, updateIter,
-          currency)
+      quoteToSell(amount, currency)
+    }
 
-    def buy(amount: Double, currency: String): Transaction =
+    def buy(amount: Double, currency: String): Transaction = {
       if (amount <= 0) sys.error(s"Cannot buy $amount BTCs") else
-      new Transaction(amount, -amount * lastBuyRate, updateIter, currency)
+      quoteToBuy(amount, currency)
+    }
 
-    def quoteToSell(amount: Double, currency: String): Transaction =
-      new Transaction(-amount, SellCut * amount * lastBuyRate, updateIter,
+    def quoteToSell(amount: Double, currency: String): Transaction = {
+      if (amount < 0) sys.error(s"Cannot sell $amount BTCs") else
+      if (amount == 0) zeroTrans(currency) else
+      new Transaction(-amount, cashFromSell(amount * lastBuyRate), updateIter,
           currency)
+    }
 
-    def quoteToBuy(amount: Double, currency: String): Transaction =
-      new Transaction(amount, -amount * lastBuyRate, updateIter, currency)
+    def quoteToBuy(amount: Double, currency: String): Transaction = {
+      if (amount < 0) sys.error(s"Cannot buy $amount BTCs") else
+      if (amount == 0) zeroTrans(currency) else
+      new Transaction(amount, -cashFromBuy(amount * lastBuyRate), updateIter,
+          currency)
+    }
 
-    def quoteToSellCash(amount: Double, currency: String): Transaction =
-      quoteToSell(amount / SellCut / lastBuyRate, currency)
+    def quoteToSellCash(amount: Double, currency: String): Transaction = {
+      val btcAmnt = cashFromSellInv(amount / lastBuyRate)
+      if (btcAmnt <= 0) zeroTrans(currency) else
+      quoteToSell(btcAmnt, currency)
+    }
 
-    def quoteToBuyCash(amount: Double, currency: String): Transaction =
-      quoteToBuy(amount / lastBuyRate, currency)
+    def quoteToBuyCash(amount: Double, currency: String): Transaction = {
+      val btcAmnt = cashFromBuyInv(amount / lastBuyRate)
+      if (btcAmnt <= 0) zeroTrans(currency) else
+      quoteToBuy(btcAmnt, currency)
+    }
 
     def update(): Unit = {
       updateIter += 1

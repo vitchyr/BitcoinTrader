@@ -229,7 +229,7 @@ object MoneyMaker {
       histCBMarket.reset()
       evaluateTraders(() => List(List(
         new TurnTrader(
-          histCBMarket,
+          cdMarket,
           capital,
           currency,
           newSoln._1,
@@ -241,8 +241,8 @@ object MoneyMaker {
 
     // "main" for this function
     setSeed(System.currentTimeMillis)
-    evaluateTraders(getNewTraders)
-    //heuristicMain()
+    //evaluateTraders(getNewTraders)
+    heuristicMain()
   }
 
   def coinBaseMain(): Unit = {

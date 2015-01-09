@@ -139,8 +139,8 @@ package trader {
       val toBuy = amountToBuy
       // It's important to get the values before because sell and buy have
       // side effects
-      sell(toSell)
-      buy(toBuy)
+      if (toSell > 0) sell(toSell)
+      if (toBuy > 0) buy(toBuy)
       _moneyLeft = cash + valueOf(bitcoins)
     }
 
