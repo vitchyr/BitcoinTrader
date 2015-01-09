@@ -49,10 +49,12 @@ package trader {
      *************************/
     // The next 4 methods get a quote for a transaction. The amount bought/sold
     // is in BTC or cash.
-    protected def sellQuote(amount: Double): Transaction = m.quoteToSell(amount, currency)
+    protected def sellQuote(amount: Double): Transaction =
+      m.quoteToSell(amount, currency)
     protected def sellQuoteCash(amount: Double): Transaction =
       m.quoteToSellCash(amount, currency)
-    protected def buyQuote(amount: Double): Transaction = m.quoteToBuy(amount, currency)
+    protected def buyQuote(amount: Double): Transaction =
+      m.quoteToBuy(amount, currency)
     protected def buyQuoteCash(amount: Double): Transaction =
       m.quoteToBuyCash(amount, currency)
 
