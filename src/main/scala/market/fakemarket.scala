@@ -104,7 +104,7 @@ package market {
     }
 
     def quoteToBuyCash(amount: Double, currency: String): Transaction = {
-      val btcAmnt = cashFromBuyInv(amount / lastBuyRate)
+      val btcAmnt = cashFromBuyInv(amount)
       if (btcAmnt <= 0) zeroTrans(currency) else
       quoteToBuy(btcAmnt, currency)
     }
