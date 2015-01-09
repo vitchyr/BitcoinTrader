@@ -22,7 +22,6 @@ package market {
       savedBuyRate = None
       _history = new ArrayBuffer()
       updateIter = -1
-      open()
     }
 
     private def lastBuyRate: Double = savedBuyRate match {
@@ -104,7 +103,7 @@ package market {
     }
 
     def quoteToBuyCash(amount: Double, currency: String): Transaction = {
-      val btcAmnt = cashFromBuyInv(amount)
+      val btcAmnt = cashFromBuyInv(amount) / lastBuyRate
       if (btcAmnt <= 0) zeroTrans(currency) else
       quoteToBuy(btcAmnt, currency)
     }
