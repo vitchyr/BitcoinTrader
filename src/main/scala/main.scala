@@ -1,5 +1,6 @@
 import market._
 import trader._
+import utils._
 import plotter.Plotter
 import scala.util.Random.setSeed
 import scala.util.Random.nextInt
@@ -10,239 +11,215 @@ object MoneyMaker {
   // Global settings
   val currency = "USD"
 
-  def fakeMarketsMain(): Unit = {
-    val capital = 100000
-    val MinSimDuration = 1500; // min time a simulation runs for
-    val MaxSimDuration = 2000; // this only matters for fake infinite markets
-    val NTrials = 1; // how many simulations to run
+  val capital = 100
+  val MinSimDuration = 1500; // min time a simulation runs for
+  val MaxSimDuration = 2000; // this only matters for fake infinite markets
+  val NTrials = 1; // how many simulations to run
 
-    // Parameters for factories
-    val maxNUpdates = 30 // numberof updates until reluctant trader gives up
-    val nDistributedTraders = 10
-    val windowSize = 14
-    val sellPercent = 0.00
-    val buyPercent = 0.03
-    val higherOrderDelay = 15 // number of updates between each subinstance
-    val minRisingSlope: Double = 1
-    val maxDroppingSlope: Double = 1
-    val minTurnChange: Double = 1
-    //(19,0.10394231972788748,2.446649732560296,1.2337791754662915)
+  // Parameters for factories
+  val maxNUpdates = 30 // numberof updates until reluctant trader gives up
+  val nDistributedTraders = 10
+  val windowSize = 19
+  val sellPercent = 0.00
+  val buyPercent = 0.03
+  val higherOrderDelay = 15 // number of updates between each subinstance
+  val minRisingSlope: Double = 0.10
+  val maxDroppingSlope: Double = 2.4
+  val minTurnChange: Double = 1.233
+  //(19,0.10394231972788748,2.446649732560296,1.2337791754662915)
+  val cheatInit = (15,0.0,2.8651634826652685,1.2564524811050153)
 
-    // Params for CoinDesk
-    val nDrop: Int = 0
-    val nDropFromEnd: Int = 50
+  // Params for CoinDesk
+  val nDrop: Int = 0
+  val nDropFromEnd: Int = 50
 
-    type Lold = List[List[Double]]
+  type Lold = List[List[Double]]
 
-    val cdMarket = new CoinDeskMarket(nDrop, nDropFromEnd)
-    val histCBMarket = new HistoricalMarket(CoinbaseMarket)
-    val markets: List[FakeMarket] =
-      List(
-        RandomMarket
-        //, SinMarket
-        //, NoisyMarket(SinMarket)
-        //, CosMarket
-        //, NoisyMarket(CosMarket)
-        , cdMarket
-        //, histCBMarket
-      )
-    markets foreach (m => m.open())
-    val simpleFactories =
-      List(
-        RandomTraderFactory
-        //, StubbornTraderFactory(sellPercent)
-        //, ReluctantTraderFactory(maxNUpdates, sellPercent)
-        //, LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
-        //, LowMeanStubbornTraderFactory(windowSize, buyPercent)
-        //, LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent)
-        , TurnTraderFactory(windowSize, minRisingSlope, maxDroppingSlope,
-            minTurnChange)
-      )
-    val traderFactories = simpleFactories ::: (simpleFactories flatMap
-      (f => List(
-        //DistributedTraderFactory(f, nDistributedTraders, higherOrderDelay)
-        //, AggregateTraderFactory(f, nDistributedTraders, higherOrderDelay)
-        )
+  val cdMarket = new CoinDeskMarket(nDrop, nDropFromEnd)
+  val histCBMarket = new HistoricalMarket(CoinbaseMarket)
+  val markets: List[FakeMarket] =
+    List(
+      RandomMarket
+      //, SinMarket
+      //, NoisyMarket(SinMarket)
+      //, CosMarket
+      //, NoisyMarket(CosMarket)
+      //, cdMarket
+      //, histCBMarket
+    )
+  markets foreach (m => m.open())
+  val simpleFactories =
+    List(
+      RandomTraderFactory
+      //, StubbornTraderFactory(sellPercent)
+      //, ReluctantTraderFactory(maxNUpdates, sellPercent)
+      //, LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
+      //, LowMeanStubbornTraderFactory(windowSize, buyPercent)
+      //, LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent)
+      //, TurnTraderFactory(windowSize, minRisingSlope, maxDroppingSlope,
+      //    minTurnChange)
+    )
+  val traderFactories = simpleFactories ::: (simpleFactories flatMap
+    (f => List(
+      //DistributedTraderFactory(f, nDistributedTraders, higherOrderDelay)
+      //, AggregateTraderFactory(f, nDistributedTraders, higherOrderDelay)
       )
     )
+  )
 
-    // Each list corresponds to one trader type. The different traders within
-    // correspond to different markets
-    def getNewTraders(): List[List[Trader]] = {
-      traderFactories map (factory =>
-        (markets map (m =>
-          factory.newTrader(m, capital, currency)))
-        )
-    }
+  def getNewTraders(): List[Trader] = {
+    traderFactories flatMap (factory =>
+      (markets map (m =>
+        factory.newTrader(m, capital, currency)))
+      )
+  }
 
-    def simDuration =
-      MinSimDuration + nextInt(MaxSimDuration - MinSimDuration + 1)
+  def simDuration =
+    MinSimDuration + nextInt(MaxSimDuration - MinSimDuration + 1)
 
-    /* evaluateTraders evaluates each trader on different markets. This is
-     * averaged of [NTrials]. Each simulation lasts [simDuration] time steps,
-     * which is designed to be random so that different results happen from
-     * markets like the sinusoidal markets. */
-    def evaluateTraders(getTraders: () => List[List[Trader]]): Unit = {
-      // Get the returns of all the traders using the same markets each.
-      def getReturns(): Lold = {
-        val traderMarketCombos: List[List[Trader]] = getTraders()
-        (1 to simDuration) foreach
-          (_ => {
-            markets foreach (m => m.update())
-            traderMarketCombos foreach
-              (traders => traders foreach (t => t.tryToTrade()))
-          })
-        traderMarketCombos map (traders =>
-          traders map (t => t.returns)
-        )
-      }
-
-      def averageReturns(): Lold = {
-        def sum2d(lst1: Lold, lst2: Lold): Lold = {
-          (lst1 zip lst2) map {
-            case (l1, l2) => (l1 zip l2) map { case (d1, d2) => d1 + d2 }
-          }
-        }
-
-        def scale2d(lst: Lold, factor: Double): Lold = {
-          lst map (l => l map (d => factor * d))
-        }
-        markets foreach (m => m.reset())
-        var returns = getReturns()
-        2 to NTrials foreach { _ =>
-          markets foreach (m => m.reset())
-          returns = sum2d(returns, getReturns())
-        }
-
-        scale2d(returns, 1.0 / NTrials.toDouble)
-      }
-
-      def printReturns(returns: Lold): Unit = {
-        println("Below are the returns for each trader at each market, with" +
-          " the following parameters:")
-        println(s"\tSimulation duration = random value in" +
-          s" [$MinSimDuration, $MaxSimDuration]")
-        println(s"\tNumber of simulations ran = $NTrials")
-        (returns zip traderFactories) map { case (rs, name) =>
-          println(s"$name:")
-          (rs zip markets) map { case (r, m) =>
-            println(s"\t$m: "+f"$r%3.2f%%")
-          }
-        }
-      }
-
-      // Get one instance of the traders that have traded.
-      def getSampleTraders(): List[Trader] = {
-        markets foreach (m => m.reset())
-        val traderMarketCombos: List[List[Trader]] = getTraders()
-        (1 to simDuration) foreach
-          (_ => {
-            markets foreach (m => m.update())
-            traderMarketCombos foreach
-              (traders => traders foreach (t => t.tryToTrade()))
-          })
-        traderMarketCombos.flatten
-      }
-
-      def displaySample(traders: List[Trader]): Unit = {
-        traders foreach (t => {
-          Plotter.plotTraderHistory(t)
+  /* Returns the average returns of the traders in the list in the order that
+   * the traders are in. */
+  def avgReturns(getTraders: () => List[Trader]): List[Double] = {
+    // Get the returns of all the traders using the same markets each.
+    def getReturns(markets: List[Market]): List[Double] = {
+      val traders = getTraders()
+      (1 to simDuration) foreach
+        (_ => {
+          markets foreach (m => m.update())
+          traders foreach (t => t.tryToTrade())
         })
-        traders foreach (t => {
-          println(s"$t: went to ${t.m} ${t.nTradesTried} times")
-          if (t.cashLostToRounding > 0.0) {
-            println(s"[Warning] Due to rounding, ${t.name} lost" +
-              f" ${t.cashLostToRounding}%.2f" +
-              s" of ${t.currency}.")
-          }
-          if (t.btcLostToRounding > 0.0) {
-            println(s"[Warning] Due to rounding, ${t.name} lost" +
-              f"${t.btcLostToRounding}%.2f" +
-               " of BTC.")
-          }
-        })
-      }
-
-      printReturns(averageReturns())
-      displaySample(getSampleTraders())
+      traders map (t => t.returns)
     }
 
-
-    def heuristicMain(): Unit = {
-      type TTParam = Tuple4[Int, Double, Double, Double]
-      /* paramSelect uses heuristic algorithms to figure out the best parameters
-       * for selected traders. */
-      def paramSelect(initSoln: TTParam): TTParam = {
-
-        def costOf(param: TTParam): Double = {
-          def returnsOf(t: Trader): Double = {
-            t.m.reset()
-            (1 to simDuration) foreach ( _ => { t.m.update(); t.tryToTrade()})
-            t.returns
-          }
-
-          val r = returnsOf(new TurnTrader(
-            new CoinDeskMarket(nDrop, nDropFromEnd),
-            capital,
-            currency,
-            param._1,
-            param._2,
-            param._3,
-            param._4)
-          )
-          /* Don't reward something that doesn't invest. Also, negate so that
-           * high returns are good */
-          if (r == 100.0) 0.0 else -r
-        }
-
-        val stepSize = 1
-
-        def neighborOf(param: TTParam): TTParam = {
-          val p1 = param._1 + stepSize*(nextInt(3) - 1)
-          val p2 = param._2 + stepSize*(nextDouble - 0.5)
-          val p3 = param._3 + stepSize*(nextDouble - 0.5)
-          val p4 = param._4 + stepSize*(nextDouble - 0.5)
-          (if (p1 < 0) 0 else p1,
-            if (p2 < 0) 0 else p2,
-            if (p3 < 0) 0 else p3,
-            if (p4 < 0) 0 else p4)
-        }
-
-        val initTemp = 450.0
-        val alpha = 0.99
-        val maxTime = 1000
-
-        val SA = new Annealing[TTParam](
-            costOf _,
-            neighborOf _,
-            initSoln,
-            initTemp,
-            alpha,
-            maxTime)
-        SA.run()
-        SA.bestSoln
-      }
-
-      val initSoln = (windowSize, minRisingSlope, maxDroppingSlope,
-          minTurnChange)
-      val newSoln = paramSelect(initSoln)
-      histCBMarket.reset()
-      evaluateTraders(() => List(List(
-        new TurnTrader(
-          cdMarket,
-          capital,
-          currency,
-          newSoln._1,
-          newSoln._2,
-          newSoln._3,
-          newSoln._4))))
-      println(s"New solution = $newSoln")
+    val markets = getMarketSet(getTraders())
+    markets foreach (m => m.reset())
+    var returns = getReturns(markets)
+    2 to NTrials foreach { _ =>
+      markets foreach (m => m.reset())
+      returns = sumList(returns, getReturns(markets))
     }
 
-    // "main" for this function
-    setSeed(System.currentTimeMillis)
-    //evaluateTraders(getNewTraders)
-    heuristicMain()
+    scaleList(returns, 1.0 / NTrials.toDouble)
+  }
+
+  // Returns the set of markets that these traders go to. Removes duplicates.
+  def getMarketSet(traders: List[Trader]): List[Market] = {
+    removeDuplicates(traders map (t => t.m))
+  }
+
+  /* Returns the traders from the call to getTraders() after they've ran the
+   * simulation. */
+  def getRanTraders(getTraders: () => List[Trader]): List[Trader] = {
+    val traders = getTraders()
+    val markets = getMarketSet(traders)
+    markets foreach (m => m.reset())
+    (1 to simDuration) foreach
+      (_ => {
+        markets foreach (m => m.update())
+        traders foreach (t => t.tryToTrade())
+      })
+    traders
+  }
+
+  def printDetailTraders(traders: List[Trader]): Unit = {
+    traders foreach (t => {
+      println(s"$t: went to ${t.m} ${t.nTradesTried} times")
+      if (t.cashLostToRounding > 0.0) {
+        println(s"[Warning] Due to rounding, ${t.name} lost" +
+          f" ${t.cashLostToRounding}%.2f" +
+          s" of ${t.currency}.")
+      }
+      if (t.btcLostToRounding > 0.0) {
+        println(s"[Warning] Due to rounding, ${t.name} lost" +
+          f"${t.btcLostToRounding}%.2f" +
+           " of BTC.")
+      }
+    })
+  }
+
+  def printReturns(t: Trader, r: Double): Unit =
+    println(s"${t.name} returns at ${t.m}: $r")
+
+  type TraderParams = Tuple4[Int, Double, Double, Double]
+
+  /* paramSelect uses heuristic algorithms to figure out the best parameters
+   * for selected traders. */
+  def paramSelect(
+      initSoln: TraderParams,
+      newTrader: TraderParams => Trader): TraderParams = {
+    val stepSize = 1
+    val initTemp = 450.0
+    val alpha = 0.99
+    val maxTime = 1000
+
+    def costOf(param: TraderParams): Double = {
+      def returnsOf(t: Trader): Double = {
+        t.m.reset()
+        (1 to simDuration) foreach ( _ => { t.m.update(); t.tryToTrade()})
+        t.returns
+      }
+
+      val r = returnsOf(newTrader(param))
+
+      /* Don't reward something that doesn't invest. Also, negate so that
+       * high returns are good */
+      if (r == 100.0) 0.0 else -r
+    }
+
+    def neighborOf(param: TraderParams): TraderParams = {
+      val p1 = param._1 + stepSize*(nextInt(3) - 1)
+      val p2 = param._2 + stepSize*(nextDouble - 0.5)
+      val p3 = param._3 + stepSize*(nextDouble - 0.5)
+      val p4 = param._4 + stepSize*(nextDouble - 0.5)
+      (if (p1 < 0) 0 else p1,
+        if (p2 < 0) 0 else p2,
+        if (p3 < 0) 0 else p3,
+        if (p4 < 0) 0 else p4)
+    }
+
+    val SA = new Annealing[TraderParams](
+        costOf _,
+        neighborOf _,
+        initSoln,
+        initTemp,
+        alpha,
+        maxTime)
+    SA.run()
+    SA.bestSoln
+  }
+
+  def heuristicMain(): Unit = {
+    ConstantMarket.open()
+    def newTrader(ps: TraderParams): Trader = {
+      new TurnTrader(
+        cdMarket,
+        capital,
+        currency,
+        ps._1,
+        ps._2,
+        ps._3,
+        ps._4)
+    }
+    val initSoln = (windowSize, minRisingSlope, maxDroppingSlope,
+        minTurnChange)
+    val params = paramSelect(initSoln, newTrader)
+    val trader = getRanTraders(() => List(newTrader(params))).head
+
+    printReturns(trader, trader.returns)
+    Plotter.plotTraderHistory(trader)
+    println(s"Parameters used = $params")
+  }
+
+  def fakeMarketsMain(): Unit = {
+    val returns = avgReturns(getNewTraders)
+    val traders = getRanTraders(getNewTraders)
+
+    println("Below are the returns with the following parameters:")
+    println(s"\tSimulation duration = random value in" +
+      s" [$MinSimDuration, $MaxSimDuration]")
+    println(s"\tNumber of simulations ran = $NTrials")
+    (traders zip returns) map { case(t, r) => printReturns(t, r) }
+    traders foreach (Plotter.plotTraderHistory(_))
   }
 
   def coinBaseMain(): Unit = {
@@ -255,7 +232,9 @@ object MoneyMaker {
   }
 
   def main(args: Array[String]) {
+    setSeed(System.currentTimeMillis)
     fakeMarketsMain()
     //coinBaseMain()
+    //heuristicMain()
   }
 }
