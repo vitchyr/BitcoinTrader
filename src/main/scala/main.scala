@@ -46,6 +46,7 @@ object MoneyMaker {
       //, NoisyMarket(CosMarket)
       //, cdMarket
       //, histCBMarket
+      //, ConstantMarket
     )
   markets foreach (m => m.open())
   val simpleFactories =
@@ -189,7 +190,6 @@ object MoneyMaker {
   }
 
   def heuristicMain(): Unit = {
-    ConstantMarket.open()
     def newTrader(ps: TraderParams): Trader = {
       new TurnTrader(
         cdMarket,
@@ -217,9 +217,10 @@ object MoneyMaker {
     println("Below are the returns with the following parameters:")
     println(s"\tSimulation duration = random value in" +
       s" [$MinSimDuration, $MaxSimDuration]")
-    println(s"\tNumber of simulations ran = $NTrials")
+    println(s"\tNumber of trials ran = $NTrials")
     (traders zip returns) map { case(t, r) => printReturns(t, r) }
-    traders foreach (Plotter.plotTraderHistory(_))
+    traders foreach Plotter.plotTraderHistory
+    traders.head.history foreach println
   }
 
   def coinBaseMain(): Unit = {
