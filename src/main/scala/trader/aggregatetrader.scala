@@ -13,15 +13,12 @@ package trader {
   class AggregateTrader(
       val m: Market,
       var cash: Double,
+      var bitcoins: Double,
       val currency: String,
       factory: SingleTraderFactory,
       nTraders: Int,
       delay: Int)
     extends SingleTrader {
-    // cash and bitcoin aren't used because the traders in [traders] store that
-    // info
-    var bitcoins: Double = 0.0
-
     /* The arrays keep track of how much each trader thinks their BTC/cash
      * should change. So if dBtcFromSell(X) = Y, then trader(X) thinks his
      * BTC amount should change by Y from a sale. */
@@ -31,7 +28,9 @@ package trader {
     private var dCashFromBuy: Array[Double] = new Array(nTraders)
 
     private val allTraders: Array[SingleTrader] = (List.range(0, nTraders) map
-      (i => factory.newTrader(m, cash / nTraders, currency))).toArray
+      (i => factory.newTrader(
+        m, cash / nTraders, bitcoins / nTraders, currency
+      ))).toArray
     private var traders: ArrayBuffer[SingleTrader] = new ArrayBuffer()
     if (delay == 0) traders appendAll allTraders
 
@@ -102,8 +101,12 @@ package trader {
       nTraders: Int,
       delay: Int)
     extends SingleTraderFactory {
-    def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
-      new AggregateTrader(m, cash, currency, f, nTraders, delay)
+    def newTrader(
+        m: Market,
+        cash: Double,
+        btc: Double,
+        currency: String): SingleTrader =
+      new AggregateTrader(m, cash, btc, currency, f, nTraders, delay)
 
     override def toString = s"Aggregate '$f' Trader"
   }

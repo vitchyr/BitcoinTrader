@@ -22,6 +22,8 @@ package trader {
     var _cashLostToRounding: Double = 0
     var _btcLostToRounding: Double = 0
 
+    var _nSells = 0
+    var _nBuys = 0
     /*************************
      ** Method to implement **
      *************************/
@@ -44,9 +46,9 @@ package trader {
      * decision making state. */
     def updateAfterBuy(trans: Transaction): Unit
     
-    /*************************
-     ** Implemented Methods **
-     *************************/
+    /***********************
+     ** Protected Methods **
+     ***********************/
     // The next 4 methods get a quote for a transaction. The amount bought/sold
     // is in BTC or cash.
     protected def sellQuote(amount: Double): Transaction =
@@ -81,23 +83,6 @@ package trader {
     // Returns the maximum amount of BTCs this trader can buy.
     protected def maxBTCsCanBuy: Double = bitcoinsCanBuyWith(cash)
 
-    /* Update this trader's bank info (cash, bitcoins, history) based on a
-     * transaction. */
-    def updateBank(trans: Transaction): Unit = {
-      bitcoins += trans.dBitcoins
-      cash += trans.dCash
-      bitcoins = Transaction.roundBtc(bitcoins)
-      cash = Transaction.roundCash(cash)
-      if (bitcoins < 0) {
-        sys.error(s"Can't have $bitcoins BTCs")
-      }
-      if (cash < 0) {
-        sys.error(s"Can't have $cash cash")
-      }
-      _history append trans
-      //println(s"** UPDATE $this: BTC = $bitcoins. cash = $cash")
-    }
-
     // Sell [amount] of bitcoins at the market.
     protected def sell(amount: Double): Unit = {
       if (amount <= 0 || amount > bitcoins) {
@@ -114,6 +99,7 @@ package trader {
         bitcoins = 0.0
       }
       updateAfterSell(trans)
+      _nSells += 1
     }
 
     // Buy [amount] of bitcoins at the market.
@@ -132,7 +118,36 @@ package trader {
         cash = 0.0
       }
       updateAfterBuy(trans)
+      _nBuys += 1
     }
+
+    /********************
+     ** Public Methods **
+     ********************/
+    /* Update this trader's bank info (cash, bitcoins, history) based on a
+     * transaction. */
+    def updateBank(trans: Transaction): Unit = {
+      bitcoins += trans.dBitcoins
+      cash += trans.dCash
+      bitcoins = Transaction.roundBtc(bitcoins)
+      cash = Transaction.roundCash(cash)
+      if (bitcoins < 0) {
+        sys.error(s"Can't have $bitcoins BTCs")
+      }
+      if (cash < 0) {
+        sys.error(s"Can't have $cash cash")
+      }
+      _history append trans
+      //println(s"** UPDATE $this: BTC = $bitcoins. cash = $cash")
+    }
+
+    def getCash: Double = cash
+    def getBtc: Double = bitcoins
+    def setCash(c: Double): Unit = cash = c
+    def setBtc(b: Double): Unit = bitcoins = b
+
+    def nSells = _nSells
+    def nBuys = _nBuys
 
     // Tell the trader to try trading for one iteration.
     def trade(): Unit = {
@@ -141,9 +156,13 @@ package trader {
       val toBuy = amountToBuy
       // It's important to get the values before because sell and buy have
       // side effects
-      if (valueOf(toSell) > 0) sell(toSell)
-      if (priceOf(toBuy) > 0) buy(toBuy)
-      _moneyLeft = cash + valueOf(bitcoins)
+      if (toSell > 0 && valueOf(toSell) > 0) sell(toSell)
+      if (toBuy > 0 && priceOf(toBuy) > 0) buy(toBuy)
+      val btcVal = if (bitcoins > 0 && valueOf(bitcoins) > 0)
+          valueOf(bitcoins)
+        else
+          0.0
+      _moneyLeft = cash + btcVal
     }
 
     def history: TraderHistory = _history.toList
@@ -156,6 +175,10 @@ package trader {
   }
 
   trait SingleTraderFactory extends TraderFactory {
-    def newTrader(m: Market, cash: Double, currency: String): SingleTrader
+    def newTrader(
+        m: Market,
+        cash: Double,
+        btc: Double,
+        currency: String): SingleTrader
   }
 }

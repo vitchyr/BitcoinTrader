@@ -1,5 +1,6 @@
 import market.Market
 import defs._
+import utils._
 import scala.collection.mutable.ArrayBuffer
 
 package trader {
@@ -12,22 +13,32 @@ package trader {
   class DistributedTrader(
       val m: Market,
       var cash: Double,
+      var bitcoins: Double,
       val currency: String,
       factory: TraderFactory,
       nTraders: Int,
       delay: Int)
     extends Trader {
-    var bitcoins: Double = 0
     protected val initialCash = cash
 
     private val allTraders: Array[Trader] = (List.range(0, nTraders) map
-      (i => factory.newTrader(m, cash / nTraders, currency))).toArray
+      (i => factory.newTrader(
+        m, cash / nTraders, bitcoins / nTraders, currency
+      ))).toArray
     private var traders: ArrayBuffer[Trader] = new ArrayBuffer()
     if (delay == 0) traders appendAll allTraders
 
     private var nUpdates: Int = 0
 
-    private def sum(xs: ArrayBuffer[Double]): Double = (0.0 /: xs)(_+_)
+    def getCash: Double = traders.map(_.getCash).sum
+    def getBtc: Double = traders.map(_.getBtc).sum
+    def setCash(c: Double): Unit =
+      sys.error(s"Cannot set cash of ${this.name}")
+    def setBtc(b: Double): Unit =
+      sys.error(s"Cannot set BTC of ${this.name}")
+
+    def nSells = traders.map(_.nSells).sum
+    def nBuys = traders.map(_.nBuys).sum
 
     def trade(): Unit = {
       if (delay != 0 && (nUpdates % delay) == 0) {
@@ -41,7 +52,7 @@ package trader {
 
     def history: List[Transaction] = (traders flatMap (t => t.history)).toList
 
-    def moneyLeft = sum(traders map (t => t.moneyLeft))
+    def moneyLeft = traders.map(t => t.moneyLeft).sum
 
     def name =
       if (traders.length == 0)
@@ -50,9 +61,9 @@ package trader {
         s"Distributed '${traders.head.name}' Trader"
 
     def cashLostToRounding: Double =
-      sum(traders map (t => t.cashLostToRounding))
+      traders.map(t => t.cashLostToRounding).sum
     def btcLostToRounding: Double =
-      sum(traders map (t => t.btcLostToRounding))
+      traders.map(t => t.btcLostToRounding).sum
   }
 
   class DistributedTraderFactory(
@@ -60,8 +71,12 @@ package trader {
       nTraders: Int,
       delay: Int)
     extends TraderFactory {
-    def newTrader(m: Market, cash: Double, currency: String): Trader =
-      new DistributedTrader(m, cash, currency, f, nTraders, delay)
+    def newTrader(
+        m: Market,
+        cash: Double,
+        btc: Double,
+        currency: String): Trader =
+      new DistributedTrader(m, cash, btc, currency, f, nTraders, delay)
 
     override def toString = s"Distributed '$f' Trader"
   }

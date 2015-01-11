@@ -15,6 +15,9 @@ package market {
     var _isOpen = false
     val fakeTrans = new Transaction(0, 0, 0, "USD")
 
+    def getBTCs(): Double = 0.0
+    def getCash(): Double = 0.0
+
     def sell(amount: Double, currency: String): Transaction = fakeTrans
 
     def buy(amount: Double, currency: String): Transaction = fakeTrans

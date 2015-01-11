@@ -7,11 +7,11 @@ package trader {
   class ReluctantTrader(
       val m: Market,
       var cash: Double,
+      var bitcoins: Double,
       val currency: String,
       maxNumUpdates: Int,
       sellPercent: Double)
     extends SingleTrader {
-    var bitcoins: Double = 0
 
     private var moneyIfSold: Double = 0
     private var moneySpent: Double = 0
@@ -57,8 +57,12 @@ package trader {
 
   class ReluctantTraderFactory(maxNumUpdates: Int, sellPercent: Double)
       extends SingleTraderFactory {
-    def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
-      new ReluctantTrader(m, cash, currency, maxNumUpdates, sellPercent)
+    def newTrader(
+        m: Market,
+        cash: Double,
+        btc: Double,
+        currency: String): SingleTrader =
+      new ReluctantTrader(m, cash, btc, currency, maxNumUpdates, sellPercent)
 
     override def toString = "Reluctant Trader Factory"
   }

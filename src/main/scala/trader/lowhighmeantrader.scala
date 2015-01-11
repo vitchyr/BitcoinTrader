@@ -9,12 +9,12 @@ package trader {
   class LowHighMeanTrader(
       val m: Market,
       var cash: Double,
+      var bitcoins: Double,
       val currency: String,
       windowSize: Int, // How many previous points to base the mean off of.
       buyPercent: Double, // buy if price is this much lower than the mean
       sellPercent: Double) // sell if price is this much higher than the mean
     extends SingleTrader {
-    var bitcoins: Double = 0
 
     private val HighThreshold: Double = 1 + sellPercent
     private val LowThreshold: Double = 1 - buyPercent
@@ -64,8 +64,12 @@ package trader {
       buyPercent: Double,
       sellPercent: Double)
     extends SingleTraderFactory {
-    def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
-      new LowHighMeanTrader(m, cash, currency, windowSize, buyPercent,
+    def newTrader(
+        m: Market,
+        cash: Double,
+        btc: Double,
+        currency: String): SingleTrader =
+      new LowHighMeanTrader(m, cash, btc, currency, windowSize, buyPercent,
           sellPercent)
 
     override def toString = "Low-High Mean Trader Factory"

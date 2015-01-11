@@ -8,12 +8,12 @@ package trader {
   class LowMeanReluctantTrader(
       val m: Market,
       var cash: Double,
+      var bitcoins: Double,
       val currency: String,
       maxNumUpdates: Int,
       windowSize:Int,
       buyPercent: Double)
     extends SingleTrader {
-    var bitcoins: Double = 0
 
     private val LowThreshold: Double = 1 - buyPercent
 
@@ -78,9 +78,13 @@ package trader {
       windowSize: Int,
       buyPercent: Double)
     extends SingleTraderFactory {
-    def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
-      new LowMeanReluctantTrader(m, cash, currency, maxNumUpdates, windowSize,
-          buyPercent)
+    def newTrader(
+        m: Market,
+        cash: Double,
+        btc: Double,
+        currency: String): SingleTrader =
+      new LowMeanReluctantTrader(m, cash, btc, currency, maxNumUpdates,
+          windowSize, buyPercent)
 
     override def toString = "Low Mean Reluctant Trader Factory"
   }

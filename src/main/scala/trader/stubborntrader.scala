@@ -7,10 +7,10 @@ package trader {
   class StubbornTrader(
       val m: Market,
       var cash: Double,
+      var bitcoins: Double,
       val currency: String,
       sellPercent: Double)
     extends SingleTrader {
-    var bitcoins: Double = 0
     private val HighThreshold: Double = 1 + sellPercent
     private var moneyIfSold: Double = 0
     private var moneySpent: Double = 0
@@ -47,8 +47,9 @@ package trader {
     def newTrader(
         m: Market,
         cash: Double,
+        btc: Double,
         currency: String): SingleTrader =
-      new StubbornTrader(m, cash, currency, sellPercent)
+      new StubbornTrader(m, cash, btc, currency, sellPercent)
 
     override def toString = "Stubborn Trader Factory"
   }

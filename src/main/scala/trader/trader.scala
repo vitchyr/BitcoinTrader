@@ -7,12 +7,21 @@ package trader {
     // how much money this trader started off with.
     protected val initialCash: Double
 
+    // how much cash/bitcoins the trader has now.
+    def getCash: Double
+    def getBtc: Double
+    def setCash(c: Double): Unit
+    def setBtc(b: Double): Unit
+
     val m: Market // Where the trader trades
     val currency: String // What currency the trader trades in.
 
     /* How many times did the trader go to the market?
      * i.e. # times trade() was called */
     var nTradesTried: Int = 0
+
+    def nSells: Int // how many times the trader sold BTCs
+    def nBuys: Int // how many times the trader bought BTCs
 
     /* Tell the trader to try to go to the market and trade. May not actually
      * trade because the market (e.g.) may be closed. */
@@ -46,6 +55,10 @@ package trader {
   }
 
   trait TraderFactory {
-    def newTrader(m: Market, cash: Double, currency: String): Trader
+    def newTrader(
+        m: Market,
+        cash: Double,
+        btc: Double,
+        currency: String): Trader
   }
 }

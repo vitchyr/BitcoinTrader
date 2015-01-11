@@ -13,6 +13,7 @@ package trader {
   class TurnTrader(
       val m: Market,
       var cash: Double,
+      var bitcoins: Double,
       val currency: String,
       windowSize: Int, // How many previous points to base the turn off of.
       minRisingSlope: Double, // Min slope for price to be rising
@@ -20,7 +21,6 @@ package trader {
       minTurnChange: Double) // The min change in slope back towards zero to
                              // consider that there's a change in direction.
     extends SingleTrader {
-    var bitcoins: Double = 0
 
     private val pricesSeen: Queue[Double] = new Queue()
     private var nData: Int = 0
@@ -106,10 +106,15 @@ package trader {
       maxDroppingSlope: Double,
       minTurnChange: Double)
     extends SingleTraderFactory {
-    def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
+    def newTrader(
+        m: Market,
+        cash: Double,
+        btc: Double,
+        currency: String): SingleTrader =
       new TurnTrader(
         m,
         cash,
+        btc,
         currency,
         windowSize,
         minRisingSlope,

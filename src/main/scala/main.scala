@@ -12,6 +12,7 @@ object MoneyMaker {
   val currency = "USD"
 
   val capital = 100
+  val initBTCs = 0.0
   val MinSimDuration = 1500; // min time a simulation runs for
   val MaxSimDuration = 2000; // this only matters for fake infinite markets
   val NTrials = 1; // how many simulations to run
@@ -37,18 +38,22 @@ object MoneyMaker {
 
   val cdMarket = new CoinDeskMarket(nDrop, nDropFromEnd)
   val histCBMarket = new HistoricalMarket(CoinbaseMarket)
+  val allMarkets: List[FakeMarket] =
+    List(
+      RandomMarket
+      , ConstantMarket
+      , SinMarket
+      , NoisyMarket(SinMarket)
+      , CosMarket
+      , NoisyMarket(CosMarket)
+      , cdMarket
+      , histCBMarket
+    )
+  allMarkets foreach (m => m.open())
   val markets: List[FakeMarket] =
     List(
       RandomMarket
-      //, SinMarket
-      //, NoisyMarket(SinMarket)
-      //, CosMarket
-      //, NoisyMarket(CosMarket)
-      //, cdMarket
-      //, histCBMarket
-      //, ConstantMarket
     )
-  markets foreach (m => m.open())
   val simpleFactories =
     List(
       RandomTraderFactory
@@ -71,7 +76,7 @@ object MoneyMaker {
   def getNewTraders(): List[Trader] = {
     traderFactories flatMap (factory =>
       (markets map (m =>
-        factory.newTrader(m, capital, currency)))
+        factory.newTrader(m, capital, initBTCs, currency)))
       )
   }
 
@@ -150,8 +155,8 @@ object MoneyMaker {
       newTrader: TraderParams => Trader): TraderParams = {
     val stepSize = 1
     val initTemp = 450.0
-    val alpha = 0.99
-    val maxTime = 1000
+    val alpha = .99
+    val maxTime = 10000
 
     def costOf(param: TraderParams): Double = {
       def returnsOf(t: Trader): Double = {
@@ -192,8 +197,9 @@ object MoneyMaker {
   def heuristicMain(): Unit = {
     def newTrader(ps: TraderParams): Trader = {
       new TurnTrader(
-        cdMarket,
+        histCBMarket,
         capital,
+        initBTCs,
         currency,
         ps._1,
         ps._2,
@@ -224,18 +230,24 @@ object MoneyMaker {
   }
 
   def coinBaseMain(): Unit = {
-    CoinbaseMarket.open()
+    histCBMarket.open()
     println(CoinbaseMarket.quoteToSell(1.0, currency))
     println(CoinbaseMarket.quoteToBuy(1.0, currency))
     CoinbaseMarket.history foreach println
     CoinbaseMarket.tradeHistory foreach println
-    Plotter.plotTraderHistory(new RandomTrader(CoinbaseMarket, 0, currency))
+    val h = CoinbaseMarket.history
+    val dt = h.head.time - h.tail.head.time
+    println(s"dt = $dt")
+    val trader = getRanTraders(
+        () => List(new RandomTrader(histCBMarket, capital, initBTCs, currency))
+      ).head
+    Plotter.plotTraderHistory(trader)
   }
 
   def main(args: Array[String]) {
     setSeed(System.currentTimeMillis)
-    fakeMarketsMain()
+    //fakeMarketsMain()
     //coinBaseMain()
-    //heuristicMain()
+    heuristicMain()
   }
 }

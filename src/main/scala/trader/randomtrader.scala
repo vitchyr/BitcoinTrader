@@ -3,9 +3,12 @@ import defs._
 import scala.util.Random.nextBoolean
 
 package trader {
-  class RandomTrader(val m: Market, var cash: Double, val currency: String)
-      extends SingleTrader {
-    var bitcoins: Double = 0;
+  class RandomTrader(
+      val m: Market,
+      var cash: Double,
+      var bitcoins: Double,
+      val currency: String)
+    extends SingleTrader {
     private var shouldBuy = false
 
     def update(): Unit = { shouldBuy = nextBoolean }
@@ -22,8 +25,12 @@ package trader {
   }
 
   object RandomTraderFactory extends SingleTraderFactory {
-    def newTrader(m: Market, cash: Double, currency: String): SingleTrader =
-      new RandomTrader(m, cash, currency)
+    def newTrader(
+        m: Market,
+        cash: Double,
+        btc: Double,
+        currency: String): SingleTrader =
+      new RandomTrader(m, cash, btc, currency)
 
     override def toString = "Random Trader Factory"
   }
