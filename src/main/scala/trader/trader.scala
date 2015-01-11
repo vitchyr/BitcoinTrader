@@ -10,8 +10,6 @@ package trader {
     // how much cash/bitcoins the trader has now.
     def getCash: Double
     def getBtc: Double
-    def setCash(c: Double): Unit
-    def setBtc(b: Double): Unit
 
     val m: Market // Where the trader trades
     val currency: String // What currency the trader trades in.

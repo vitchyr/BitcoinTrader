@@ -10,8 +10,8 @@ package trader {
    *    price = how much it costs to buy something.
    */
   trait SingleTrader extends Trader { 
-    var cash: Double
-    var bitcoins: Double
+    protected var cash: Double
+    protected var bitcoins: Double
     val currency: String
 
     private var _moneyLeft = cash
@@ -143,8 +143,6 @@ package trader {
 
     def getCash: Double = cash
     def getBtc: Double = bitcoins
-    def setCash(c: Double): Unit = cash = c
-    def setBtc(b: Double): Unit = bitcoins = b
 
     def nSells = _nSells
     def nBuys = _nBuys

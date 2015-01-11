@@ -49,7 +49,7 @@ package trader {
       nUpdates += 1
       (List.range(0, nTraders) zip traders) foreach { case(i, t) =>
         def fakeSell(amount: Double): Unit = {
-          if (amount <= 0 || amount > t.bitcoins) {
+          if (amount <= 0 || amount > t.getBtc) {
             if (amount < 0) {
               sys.error(s"Can't sell $amount BTCs - $this")
             }
@@ -61,7 +61,7 @@ package trader {
         }
 
         def fakeBuy(amount: Double): Unit = {
-          if (amount <= 0 || priceOf(amount) > t.cash) {
+          if (amount <= 0 || priceOf(amount) > t.getCash) {
             if (amount < 0) {
               sys.error(s"Can't buy $amount BTCs - $this")
             }
