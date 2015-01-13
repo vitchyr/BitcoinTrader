@@ -38,6 +38,9 @@ object MoneyMaker {
 
   val cdMarket = new CoinDeskMarket(nDrop, nDropFromEnd)
   val histCBMarket = new HistoricalMarket(new CoinbaseMarket())
+  val histCBMarket2 = new HistoricalMarket(new CoinbaseMarket(2))
+  val histCBMarket3 = new HistoricalMarket(new CoinbaseMarket(3))
+  val histCBMarket4 = new HistoricalMarket(new CoinbaseMarket(4))
   val allMarkets: List[FakeMarket] =
     List(
       RandomMarket
@@ -48,22 +51,30 @@ object MoneyMaker {
       , NoisyMarket(CosMarket)
       , cdMarket
       , histCBMarket
+      , histCBMarket2
+      , histCBMarket3
+      , histCBMarket4
     )
   allMarkets foreach (m => m.open())
   val markets: List[FakeMarket] =
     List(
       RandomMarket
+      , cdMarket
+      , histCBMarket
+      , histCBMarket2
+      , histCBMarket3
+      , histCBMarket4
     )
   val simpleFactories =
     List(
       RandomTraderFactory
       //, StubbornTraderFactory(sellPercent)
       //, ReluctantTraderFactory(maxNUpdates, sellPercent)
-      //, LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
+      , LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
       //, LowMeanStubbornTraderFactory(windowSize, buyPercent)
-      //, LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent)
-      //, TurnTraderFactory(windowSize, minRisingSlope, maxDroppingSlope,
-      //    minTurnChange)
+      , LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent)
+      , TurnTraderFactory(windowSize, minRisingSlope, maxDroppingSlope,
+          minTurnChange)
     )
   val traderFactories = simpleFactories ::: (simpleFactories flatMap
     (f => List(
@@ -156,7 +167,7 @@ object MoneyMaker {
     val stepSize = 1
     val initTemp = 450.0
     val alpha = .99
-    val maxTime = 10000
+    val maxTime = 10
 
     def costOf(param: TraderParams): Double = {
       def returnsOf(t: Trader): Double = {
@@ -195,9 +206,12 @@ object MoneyMaker {
   }
 
   def heuristicMain(): Unit = {
+    var page = 0
     def newTrader(ps: TraderParams): Trader = {
+      page += 1
+      println(s"page = $page")
       new TurnTrader(
-        histCBMarket,
+        new HistoricalMarket(new CoinbaseMarket(page)),
         capital,
         initBTCs,
         currency,
@@ -225,31 +239,48 @@ object MoneyMaker {
       s" [$MinSimDuration, $MaxSimDuration]")
     println(s"\tNumber of trials ran = $NTrials")
     (traders zip returns) map { case(t, r) => printReturns(t, r) }
-    traders foreach Plotter.plotTraderHistory
-    traders.head.history foreach println
+    //traders foreach Plotter.plotTraderHistory
+    //traders.head.history foreach println
   }
 
   def coinBaseMain(): Unit = {
-    histCBMarket.open()
     /*
-    println(CoinbaseMarket.quoteToSell(1.0, currency))
-    println(CoinbaseMarket.quoteToBuy(1.0, currency))
-    CoinbaseMarket.history foreach println
-    CoinbaseMarket.tradeHistory foreach println
-    val h = CoinbaseMarket.history
+    // Testing things
+    val cbm = new CoinbaseMarket()
+    println(cmb.quoteToSell(1.0, currency))
+    println(cmb.quoteToBuy(1.0, currency))
+    cmb.history foreach println
+    cmb.tradeHistory foreach println
+    val h = cmb.history
     val dt = h.head.time - h.tail.head.time
     println(s"dt = $dt")
     */
-    val trader = getRanTraders(
-        () => List(new RandomTrader(histCBMarket, capital, initBTCs, currency))
-      ).head
-    Plotter.plotTraderHistory(trader)
+
+    var page = 0
+    while (true) {
+      page += 1
+      val hcbm = new HistoricalMarket(new CoinbaseMarket(page))
+      hcbm.open()
+      val t = getRanTraders(
+          () => List(new TurnTrader(
+            hcbm,
+            capital,
+            initBTCs,
+            currency,
+            windowSize,
+            minRisingSlope,
+            maxDroppingSlope,
+            minTurnChange))
+        ).head
+      printReturns(t, t.returns)
+    }
+    //Plotter.plotTraderHistory(trader)
   }
 
   def main(args: Array[String]) {
     setSeed(System.currentTimeMillis)
     //fakeMarketsMain()
-    //coinBaseMain()
-    heuristicMain()
+    coinBaseMain()
+    //heuristicMain()
   }
 }

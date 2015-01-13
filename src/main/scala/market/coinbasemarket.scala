@@ -95,7 +95,7 @@ package market {
 
     def reset(): Unit = ()
 
-    override def toString = "Coinbase Market"
+    override def toString = s"Coinbase Market, page $pageNum"
 
     /****** New Methods ******/
     // Get my account, assuming there's only one.
