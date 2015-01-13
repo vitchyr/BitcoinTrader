@@ -37,7 +37,7 @@ object MoneyMaker {
   type Lold = List[List[Double]]
 
   val cdMarket = new CoinDeskMarket(nDrop, nDropFromEnd)
-  val histCBMarket = new HistoricalMarket(CoinbaseMarket)
+  val histCBMarket = new HistoricalMarket(new CoinbaseMarket())
   val allMarkets: List[FakeMarket] =
     List(
       RandomMarket
@@ -231,6 +231,7 @@ object MoneyMaker {
 
   def coinBaseMain(): Unit = {
     histCBMarket.open()
+    /*
     println(CoinbaseMarket.quoteToSell(1.0, currency))
     println(CoinbaseMarket.quoteToBuy(1.0, currency))
     CoinbaseMarket.history foreach println
@@ -238,6 +239,7 @@ object MoneyMaker {
     val h = CoinbaseMarket.history
     val dt = h.head.time - h.tail.head.time
     println(s"dt = $dt")
+    */
     val trader = getRanTraders(
         () => List(new RandomTrader(histCBMarket, capital, initBTCs, currency))
       ).head

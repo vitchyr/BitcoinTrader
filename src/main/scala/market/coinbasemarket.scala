@@ -1,15 +1,14 @@
 import defs._
 import utils._
 import scala.io.Source
-import com.coinbase.api.entity.Transfer
-import com.coinbase.api.Coinbase
-import com.coinbase.api.CoinbaseBuilder
+import com.coinbase.api.entity.{Transfer, Account}
+import com.coinbase.api.{Coinbase, CoinbaseBuilder}
 import org.joda.money.Money
 import scala.collection.JavaConversions._
 
 package market { 
   // A wrapper around the coinbase java API
-  object CoinbaseMarket extends Market {
+  class CoinbaseMarket(pageNum: Int = 1) extends Market {
     val Currency = "USD"
     var cb: Coinbase = _ // the CoinbaseBuilder
     var _isOpen = false
@@ -69,7 +68,7 @@ package market {
       _isOpen = true
 
     def history: MarketHistory = {
-      for (p <- cb.getHistoricalPrices().toList) yield {
+      for (p <- cb.getHistoricalPrices(pageNum).toList) yield {
         new BitcoinStat(
           p.getTime().getMillis(),
           p.getSpotPrice().getAmount().doubleValue())
@@ -97,5 +96,18 @@ package market {
     def reset(): Unit = ()
 
     override def toString = "Coinbase Market"
+
+    /****** New Methods ******/
+    // Get my account, assuming there's only one.
+    def account: Account = cb.getAccounts().getAccounts().get(0)
+
+    // How much BTC is in the coinbase account to start with
+    def initCash: Double = {
+      val c = 100.00 + (tradeHistory map (_.dCash)).sum
+      if (c < 0) 0.0 else c
+    }
+
+    // How much cash is in the coinbase account to start with
+    def initBtcs: Double = account.getBalance().getAmount.doubleValue()
   }
 }
