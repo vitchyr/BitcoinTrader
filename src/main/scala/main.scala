@@ -58,8 +58,8 @@ object MoneyMaker {
   allMarkets foreach (m => m.open())
   val markets: List[FakeMarket] =
     List(
-      RandomMarket
-      , cdMarket
+      //RandomMarket
+      cdMarket
       , histCBMarket
       , histCBMarket2
       , histCBMarket3
@@ -67,14 +67,14 @@ object MoneyMaker {
     )
   val simpleFactories =
     List(
-      RandomTraderFactory
+      //RandomTraderFactory
       //, StubbornTraderFactory(sellPercent)
       //, ReluctantTraderFactory(maxNUpdates, sellPercent)
-      , LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
+      LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
       //, LowMeanStubbornTraderFactory(windowSize, buyPercent)
-      , LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent)
-      , TurnTraderFactory(windowSize, minRisingSlope, maxDroppingSlope,
-          minTurnChange)
+      //, LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent)
+      //, TurnTraderFactory(windowSize, minRisingSlope, maxDroppingSlope,
+      //    minTurnChange
     )
   val traderFactories = simpleFactories ::: (simpleFactories flatMap
     (f => List(
@@ -239,7 +239,7 @@ object MoneyMaker {
       s" [$MinSimDuration, $MaxSimDuration]")
     println(s"\tNumber of trials ran = $NTrials")
     (traders zip returns) map { case(t, r) => printReturns(t, r) }
-    //traders foreach Plotter.plotTraderHistory
+    traders foreach Plotter.plotTraderHistory
     //traders.head.history foreach println
   }
 
@@ -277,10 +277,33 @@ object MoneyMaker {
     //Plotter.plotTraderHistory(trader)
   }
 
+  // What to run to just trade and try to make money.
+  def makeMoneyMain(): Unit = {
+    println("Test")
+  }
+
   def main(args: Array[String]) {
     setSeed(System.currentTimeMillis)
-    //fakeMarketsMain()
-    coinBaseMain()
-    //heuristicMain()
+    if (args.length > 0) {
+      args.head match {
+        case "-c" => coinBaseMain()
+        case "-f" => fakeMarketsMain()
+        case "-h" => heuristicMain()
+        case "-r" => makeMoneyMain()
+        case _ => {
+          println("Option not recognized. Recognized options:"
+            +"\n\t-c fake coinbase main"
+            +"\n\t-f fake market main"
+            +"\n\t-h heuristic main"
+            +"\n\t-r real trading main")
+        }
+      }
+    } else {
+      println("Please provide an option:"
+        +"\n\t-c fake coinbase main"
+        +"\n\t-f fake market main"
+        +"\n\t-h heuristic main"
+        +"\n\t-r real trading main")
+    }
   }
 }

@@ -10,8 +10,10 @@ package market {
     private var _history: ArrayBuffer[BitcoinStat] = new ArrayBuffer()
     private var updateIter = -1
 
+    protected def iterTime: Long = updateIter.toLong
+
     def zeroTrans(currency: String) =
-      new Transaction(0.0, 0.0, updateIter, currency)
+      new Transaction(0.0, 0.0, iterTime, currency)
 
     // Reset the state of the class as if it had just been initialized
     def resetState(): Unit
@@ -85,14 +87,14 @@ package market {
     def quoteToSell(amount: Double, currency: String): Transaction = {
       if (amount < 0) sys.error(s"Cannot sell $amount BTCs") else
       if (amount == 0) zeroTrans(currency) else
-      new Transaction(-amount, cashFromSell(amount * lastBuyRate), updateIter,
+      new Transaction(-amount, cashFromSell(amount * lastBuyRate), iterTime,
           currency)
     }
 
     def quoteToBuy(amount: Double, currency: String): Transaction = {
       if (amount < 0) sys.error(s"Cannot buy $amount BTCs") else
       if (amount == 0) zeroTrans(currency) else
-      new Transaction(amount, -cashFromBuy(amount * lastBuyRate), updateIter,
+      new Transaction(amount, -cashFromBuy(amount * lastBuyRate), iterTime,
           currency)
     }
 
@@ -112,7 +114,7 @@ package market {
       updateIter += 1
       if (this.iterator.hasNext) {
         val rate = this.iterator.next()
-        _history append (new BitcoinStat(updateIter.toDouble, rate))
+        _history append (new BitcoinStat(iterTime, rate))
         savedBuyRate = Some(rate)
       } else {
         savedBuyRate = None

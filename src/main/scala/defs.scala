@@ -30,7 +30,7 @@ package object defs {
     def roundCash(x: Double): Double = round(x, CashPrecision)
   }
 
-  class BitcoinStat(val time: Double, val price: Double) {
+  class BitcoinStat(val time: Long, val price: Double) {
     override def toString = s"BTC Stat @ time $time:" +
       s"\n\tprice: $price"
   }

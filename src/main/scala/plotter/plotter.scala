@@ -8,7 +8,7 @@ package plotter {
       val fname =
         s"plots/${t.name}_at_${t.m.toString}.png".replaceAll(" ", "_")
 
-      val (mTs, mPrices) = (for (h <- t.m.history) yield (h.time, h.price))
+      val (mTs, mPrices) = (for (h <- t.m.history) yield (h.time.toDouble, h.price))
         .unzip
 
       val tData = for (h <- t.history) yield (h.time, h.dBitcoins, h.dCash)
