@@ -138,7 +138,6 @@ package trader {
         sys.error(s"Can't have $cash cash")
       }
       _history append trans
-      //println(s"** UPDATE $this: BTC = $bitcoins. cash = $cash")
     }
 
     def getCash: Double = cash
