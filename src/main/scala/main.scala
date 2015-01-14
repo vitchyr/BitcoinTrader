@@ -21,13 +21,14 @@ object MoneyMaker {
   val maxNUpdates = 30 // numberof updates until reluctant trader gives up
   val nDistributedTraders = 10
   val windowSize = 19
-  val sellPercent = 0.00
+  val sellPercent = 0.03
   val buyPercent = 0.03
   val higherOrderDelay = 15 // number of updates between each subinstance
   val minRisingSlope: Double = 0.10
   val maxDroppingSlope: Double = 2.4
   val minTurnChange: Double = 1.233
-  //(19,0.10394231972788748,2.446649732560296,1.2337791754662915)
+  val turnTTParams =
+    (19,0.10394231972788748,2.446649732560296,1.2337791754662915)
   val cheatInit = (15,0.0,2.8651634826652685,1.2564524811050153)
 
   // Params for CoinDesk
@@ -59,22 +60,21 @@ object MoneyMaker {
   val markets: List[FakeMarket] =
     List(
       //RandomMarket
-      cdMarket
-      , histCBMarket
-      , histCBMarket2
-      , histCBMarket3
-      , histCBMarket4
+      cdMarket,
+      histCBMarket,
+      histCBMarket2,
+      histCBMarket3,
+      histCBMarket4
     )
   val simpleFactories =
     List(
-      //RandomTraderFactory
-      //, StubbornTraderFactory(sellPercent)
-      //, ReluctantTraderFactory(maxNUpdates, sellPercent)
-      LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
-      //, LowMeanStubbornTraderFactory(windowSize, buyPercent)
-      //, LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent)
-      //, TurnTraderFactory(windowSize, minRisingSlope, maxDroppingSlope,
-      //    minTurnChange
+      //RandomTraderFactory,
+      StubbornTraderFactory(sellPercent),
+      //ReluctantTraderFactory(maxNUpdates, sellPercent),
+      //LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent),
+      //LowMeanStubbornTraderFactory(windowSize, buyPercent),
+      //LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent),
+      (TurnTraderFactory.apply _).tupled(turnTTParams)
     )
   val traderFactories = simpleFactories ::: (simpleFactories flatMap
     (f => List(
@@ -84,11 +84,14 @@ object MoneyMaker {
     )
   )
 
+  def traderFromFactory(f: TraderFactory, m: Market): Trader = {
+    f.newTrader(m, capital, initBTCs, currency)
+  }
+
   def getNewTraders(): List[Trader] = {
     traderFactories flatMap (factory =>
-      (markets map (m =>
-        factory.newTrader(m, capital, initBTCs, currency)))
-      )
+      (markets map (traderFromFactory(factory, _)))
+    )
   }
 
   def simDuration =
@@ -157,33 +160,34 @@ object MoneyMaker {
   def printReturns(t: Trader, r: Double): Unit =
     println(s"${t.name} returns at ${t.m}: $r")
 
-  type TraderParams = Tuple4[Int, Double, Double, Double]
+  type TTParams = Tuple4[Int, Double, Double, Double]
 
   /* paramSelect uses heuristic algorithms to figure out the best parameters
    * for selected traders. */
   def paramSelect(
-      initSoln: TraderParams,
-      newTrader: TraderParams => Trader): TraderParams = {
+      initSoln: TTParams,
+      newTrader: TTParams => Trader): TTParams = {
     val stepSize = 1
     val initTemp = 450.0
     val alpha = .99
-    val maxTime = 10
+    val maxTime = 1000
 
-    def costOf(param: TraderParams): Double = {
+    def costOf(param: TTParams): Double = {
       def returnsOf(t: Trader): Double = {
         t.m.reset()
         (1 to simDuration) foreach ( _ => { t.m.update(); t.tryToTrade()})
         t.returns
       }
 
-      val r = returnsOf(newTrader(param))
+      val t = newTrader(param)
+      val r = returnsOf(t)
 
-      /* Don't reward something that doesn't invest. Also, negate so that
+      /* Don't reward something that doesn't trade. Also, negate so that
        * high returns are good */
-      if (r == 100.0) 0.0 else -r
+      if (r == 100.0 || t.nBuys == 0 || t.nSells == 0) 0.0 else -r
     }
 
-    def neighborOf(param: TraderParams): TraderParams = {
+    def neighborOf(param: TTParams): TTParams = {
       val p1 = param._1 + stepSize*(nextInt(3) - 1)
       val p2 = param._2 + stepSize*(nextDouble - 0.5)
       val p3 = param._3 + stepSize*(nextDouble - 0.5)
@@ -194,7 +198,7 @@ object MoneyMaker {
         if (p4 < 0) 0 else p4)
     }
 
-    val SA = new Annealing[TraderParams](
+    val SA = new Annealing[TTParams](
         costOf _,
         neighborOf _,
         initSoln,
@@ -206,23 +210,12 @@ object MoneyMaker {
   }
 
   def heuristicMain(): Unit = {
-    var page = 0
-    def newTrader(ps: TraderParams): Trader = {
-      page += 1
-      println(s"page = $page")
-      new TurnTrader(
-        new HistoricalMarket(new CoinbaseMarket(page)),
-        capital,
-        initBTCs,
-        currency,
-        ps._1,
-        ps._2,
-        ps._3,
-        ps._4)
+    val hcbm2 = new HistoricalMarket(new CoinbaseMarket(3))
+    def newTrader(ps: TTParams): Trader = {
+      val f = (TurnTraderFactory.apply _).tupled(ps)
+      traderFromFactory(f, hcbm2)
     }
-    val initSoln = (windowSize, minRisingSlope, maxDroppingSlope,
-        minTurnChange)
-    val params = paramSelect(initSoln, newTrader)
+    val params = paramSelect(turnTTParams, newTrader)
     val trader = getRanTraders(() => List(newTrader(params))).head
 
     printReturns(trader, trader.returns)
@@ -234,7 +227,7 @@ object MoneyMaker {
     val returns = avgReturns(getNewTraders)
     val traders = getRanTraders(getNewTraders)
 
-    println("Below are the returns with the following parameters:")
+    println("Below are the average returns with the following parameters:")
     println(s"\tSimulation duration = random value in" +
       s" [$MinSimDuration, $MaxSimDuration]")
     println(s"\tNumber of trials ran = $NTrials")
