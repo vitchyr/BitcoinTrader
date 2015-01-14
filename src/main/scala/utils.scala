@@ -1,7 +1,7 @@
 // Utility functions
 package object utils {
   // returns the time in milliseconds
-  def time(): Long = System.currentTimeMillis
+  def time: Long = System.currentTimeMillis
 
   /* Return [xs] with duplicates removed. Order is maintained. If there are
    * duplicates, the first copy is kept. */

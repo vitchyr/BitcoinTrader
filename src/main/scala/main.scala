@@ -1,6 +1,7 @@
 import market._
 import trader._
 import utils._
+import defs.minDTime
 import plotter.Plotter
 import scala.util.Random.setSeed
 import scala.util.Random.nextInt
@@ -71,6 +72,7 @@ object MoneyMaker {
     )
   val turn = (TurnTraderFactory.apply _).tupled(turnTTParams)
   val stubborn = StubbornTraderFactory(sellPercent)
+  val mean = LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
   val simpleFactories =
     List(
       //RandomTraderFactory,
@@ -81,6 +83,9 @@ object MoneyMaker {
       //LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent),
       new BuySellTraderFactory(turn, turn),
       new BuySellTraderFactory(turn, stubborn)
+      //new BuySellTraderFactory(stubborn, turn)
+      //new BuySellTraderFactory(mean, mean),
+      //new BuySellTraderFactory(mean, stubborn)
     )
   val traderFactories = simpleFactories ::: (simpleFactories flatMap
     (f => List(
@@ -234,7 +239,7 @@ object MoneyMaker {
       s" [$MinSimDuration, $MaxSimDuration]")
     println(s"\tNumber of trials ran = $NTrials")
     (traders zip returns) map { case(t, r) => printReturns(t, r) }
-    printDetailTraders(traders)
+    //printDetailTraders(traders)
     traders foreach Plotter.plotTraderHistory
     //traders.head.history foreach println
   }
@@ -275,7 +280,17 @@ object MoneyMaker {
 
   // What to run to just trade and try to make money.
   def makeMoneyMain(): Unit = {
-    println("Test")
+    val m = RandomMarket
+    val f = new BuySellTraderFactory(turn, turn)
+    val t = traderFromFactory(f, m)
+
+    m.open()
+    while (true) {
+      m.update()
+      t.tryToTrade()
+      println(s"Price at $time: ${m.spotPrice}")
+      Thread sleep minDTime
+    }
   }
 
   def main(args: Array[String]) {

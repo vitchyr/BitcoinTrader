@@ -48,7 +48,7 @@ package trader {
         }
         slope = b
         price = newPrice
-        //println(s"Time ${nData - 1}: $slope")
+        println(s"Time ${nData - 1}: $slope")
       }
     }
 
@@ -80,8 +80,8 @@ package trader {
 
     def amountToBuy: Double = {
       if (nData > windowSize && wasGoing(Down) && turned(Up)) {
-        //println(s"BUY $maxBTCsCanBuy BTCs! Time is $nData")
-        //println(s"\tThe old slope was $lastSlope. Now it's $slope")
+        println(s"BUY $maxBTCsCanBuy BTCs! Time is $nData")
+        println(s"\tThe old slope was $lastSlope. Now it's $slope")
         return maxBTCsCanBuy
       }
       /*

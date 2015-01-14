@@ -2,6 +2,14 @@ import defs._
 
 package market { 
   trait Market {
+    protected var _spotPrice: Option[Double]
+    // Get the last spot price saved: $ per BTC
+    def spotPrice: Double = _spotPrice match {
+      case Some(p) => p
+      case None => sys.error("Market is not open. Try calling open()" +
+        " and then calling update().")
+    }
+
     // Sell [amount] of bitcoints. Returns the amount sucessfully sold.
     def sell(amount: Double, currency: String): Transaction
 
