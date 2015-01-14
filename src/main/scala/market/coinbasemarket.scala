@@ -68,7 +68,8 @@ package market {
       _isOpen = true
 
     def history: MarketHistory = {
-      for (p <- cb.getHistoricalPrices(pageNum).toList) yield {
+      // History given is in reverse chronological order
+      for (p <- cb.getHistoricalPrices(pageNum).toList.reverse) yield {
         new BitcoinStat(
           p.getTime().getMillis(),
           p.getSpotPrice().getAmount().doubleValue())
