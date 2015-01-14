@@ -10,14 +10,13 @@ import heuristics._
 object MoneyMaker {
   // Global settings
   val currency = "USD"
-
   val capital = 100
   val initBTCs = 0.0
   val MinSimDuration = 1500; // min time a simulation runs for
   val MaxSimDuration = 2000; // this only matters for fake infinite markets
   val NTrials = 1; // how many simulations to run
 
-  // Parameters for factories
+  // Factory Settings
   val maxNUpdates = 30 // numberof updates until reluctant trader gives up
   val nDistributedTraders = 10
   val windowSize = 19
@@ -31,11 +30,15 @@ object MoneyMaker {
     (19,0.10394231972788748,2.446649732560296,1.2337791754662915)
   val cheatInit = (15,0.0,2.8651634826652685,1.2564524811050153)
 
-  // Params for CoinDesk
+  // CoinDesk Settings
   val nDrop: Int = 0
   val nDropFromEnd: Int = 50
 
-  type Lold = List[List[Double]]
+  // Simulated Annealing Settings
+  val stepSize = 1
+  val initTemp = 450.0
+  val alpha = .99
+  val maxTime = 1000
 
   val cdMarket = new CoinDeskMarket(nDrop, nDropFromEnd)
   val histCBMarket = new HistoricalMarket(new CoinbaseMarket())
@@ -167,11 +170,6 @@ object MoneyMaker {
   def paramSelect(
       initSoln: TTParams,
       newTrader: TTParams => Trader): TTParams = {
-    val stepSize = 1
-    val initTemp = 450.0
-    val alpha = .99
-    val maxTime = 1000
-
     def costOf(param: TTParams): Double = {
       def returnsOf(t: Trader): Double = {
         t.m.reset()
