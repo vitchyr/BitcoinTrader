@@ -2,7 +2,7 @@ import scala.collection.mutable.ArrayBuffer
 
 // Definitions that everyone will use
 package object defs {
-  val minDTime = 100 // mininum ms between price checks
+  val minDTime = 1000 // mininum ms between price checks
 
   /* Holds how many bitcoins were sold/bought for how much cash in [currency]
    * at a given time.

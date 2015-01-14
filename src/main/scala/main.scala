@@ -73,6 +73,7 @@ object MoneyMaker {
   val turn = (TurnTraderFactory.apply _).tupled(turnTTParams)
   val stubborn = StubbornTraderFactory(sellPercent)
   val mean = LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
+  val random = RandomTraderFactory
   val simpleFactories =
     List(
       //RandomTraderFactory,
@@ -281,14 +282,16 @@ object MoneyMaker {
   // What to run to just trade and try to make money.
   def makeMoneyMain(): Unit = {
     val m = RandomMarket
-    val f = new BuySellTraderFactory(turn, turn)
+    val f = new BuySellTraderFactory(random, random)
     val t = traderFromFactory(f, m)
 
     m.open()
     while (true) {
       m.update()
       t.tryToTrade()
-      println(s"Price at $time: ${m.spotPrice}")
+      println(s"Time $time")
+      println(s"\tPrice:${m.spotPrice}")
+      println(s"\tReturns:${t.returns}")
       Thread sleep minDTime
     }
   }
