@@ -13,9 +13,9 @@ package trader {
 
     def update(): Unit = { shouldBuy = nextBoolean }
 
-    def amountToSell(): Double = if (!shouldBuy) bitcoins else 0.0
+    def amountToSell: Double = if (!shouldBuy) bitcoins else 0.0
 
-    def amountToBuy(): Double = if (shouldBuy) maxBTCsCanBuy else 0.0
+    def amountToBuy: Double = if (shouldBuy) maxBTCsCanBuy else 0.0
 
     def updateAfterSell(trans: Transaction): Unit = ()
 
