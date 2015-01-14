@@ -63,21 +63,24 @@ object MoneyMaker {
   val markets: List[FakeMarket] =
     List(
       //RandomMarket
-      cdMarket,
-      histCBMarket,
-      histCBMarket2,
-      histCBMarket3,
-      histCBMarket4
+      cdMarket
+      //histCBMarket,
+      //histCBMarket2,
+      //histCBMarket3,
+      //histCBMarket4
     )
+  val turn = (TurnTraderFactory.apply _).tupled(turnTTParams)
+  val stubborn = StubbornTraderFactory(sellPercent)
   val simpleFactories =
     List(
       //RandomTraderFactory,
-      StubbornTraderFactory(sellPercent),
+      //StubbornTraderFactory(sellPercent),
       //ReluctantTraderFactory(maxNUpdates, sellPercent),
       //LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent),
       //LowMeanStubbornTraderFactory(windowSize, buyPercent),
       //LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent),
-      (TurnTraderFactory.apply _).tupled(turnTTParams)
+      new BuySellTraderFactory(turn, turn),
+      new BuySellTraderFactory(turn, stubborn)
     )
   val traderFactories = simpleFactories ::: (simpleFactories flatMap
     (f => List(
@@ -146,14 +149,15 @@ object MoneyMaker {
 
   def printDetailTraders(traders: List[Trader]): Unit = {
     traders foreach (t => {
-      println(s"$t: went to ${t.m} ${t.nTradesTried} times")
+      println(s"Detailed information about $t:")
+      println(s"\tWent to ${t.m} ${t.nTradesTried} times")
       if (t.cashLostToRounding > 0.0) {
-        println(s"[Warning] Due to rounding, ${t.name} lost" +
+        println(s"\t[Warning] Due to rounding, ${t.name} lost" +
           f" ${t.cashLostToRounding}%.2f" +
           s" of ${t.currency}.")
       }
       if (t.btcLostToRounding > 0.0) {
-        println(s"[Warning] Due to rounding, ${t.name} lost" +
+        println(s"\t[Warning] Due to rounding, ${t.name} lost" +
           f"${t.btcLostToRounding}%.2f" +
            " of BTC.")
       }
@@ -230,6 +234,7 @@ object MoneyMaker {
       s" [$MinSimDuration, $MaxSimDuration]")
     println(s"\tNumber of trials ran = $NTrials")
     (traders zip returns) map { case(t, r) => printReturns(t, r) }
+    printDetailTraders(traders)
     traders foreach Plotter.plotTraderHistory
     //traders.head.history foreach println
   }

@@ -8,8 +8,8 @@ package trader {
       var cash: Double,
       var bitcoins: Double,
       val currency: String,
-      b: Buyer,
-      s: Seller)
+      b: SingleTrader,
+      s: SingleTrader)
     extends SingleTrader {
     private var shouldBuy = false
 
@@ -24,28 +24,32 @@ package trader {
 
     def updateAfterSell(trans: Transaction): Unit = {
       b.updateAfterSell(trans)
+      b.updateBank(trans)
       s.updateAfterSell(trans)
+      s.updateBank(trans)
     }
 
     def updateAfterBuy(trans: Transaction): Unit = {
       b.updateAfterBuy(trans)
+      b.updateBank(trans)
       s.updateAfterBuy(trans)
+      s.updateBank(trans)
     }
 
-    def name = s"'${b.name}' + '${s.name}' Trader"
+    def name = s"'${b.name}' Buyer + '${s.name}' Seller"
   }
 
   class BuySellTraderFactory(
-      bf: BuyerFactory,
-      sf: SellerFactory)
+      bf: SingleTraderFactory,
+      sf: SingleTraderFactory)
     extends SingleTraderFactory {
     def newTrader(
         m: Market,
         cash: Double,
         btc: Double,
         currency: String): SingleTrader = {
-      val b = bf.newBuyer(m, cash, btc, currency)
-      val s = sf.newSeller(m, cash, btc, currency)
+      val b = bf.newTrader(m, cash, btc, currency)
+      val s = sf.newTrader(m, cash, btc, currency)
       new BuySellTrader(m, cash, btc, currency, b, s)
     }
 

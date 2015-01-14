@@ -91,13 +91,8 @@ package trader {
         }
         return ()
       }
-      val oldBitcoins = bitcoins
       val trans = m.sell(amount, currency)
       updateBank(trans)
-      if (amount == oldBitcoins && bitcoins != 0.0) {
-        _btcLostToRounding += bitcoins
-        bitcoins = 0.0
-      }
       updateAfterSell(trans)
       _nSells += 1
     }
@@ -110,13 +105,8 @@ package trader {
         }
         return ()
       }
-      val oldMax = maxBTCsCanBuy
       val trans = m.buy(amount, currency)
       updateBank(trans)
-      if (amount == oldMax && cash != 0.0) {
-        _cashLostToRounding += cash
-        cash = 0.0
-      }
       updateAfterBuy(trans)
       _nBuys += 1
     }
@@ -127,16 +117,26 @@ package trader {
     /* Update this trader's bank info (cash, bitcoins, history) based on a
      * transaction. */
     def updateBank(trans: Transaction): Unit = {
-      bitcoins += trans.dBitcoins
-      cash += trans.dCash
-      bitcoins = Transaction.roundBtc(bitcoins)
-      cash = Transaction.roundCash(cash)
+      val oldBitcoins = bitcoins
+      bitcoins = Transaction.roundBtc(bitcoins + trans.dBitcoins)
+      if (oldBitcoins + trans.dBitcoins == 0.0 && bitcoins != 0.0) {
+        _btcLostToRounding += bitcoins
+        bitcoins = 0.0
+      }
       if (bitcoins < 0) {
         sys.error(s"Can't have $bitcoins BTCs")
+      }
+
+      val oldMax = maxBTCsCanBuy
+      cash = Transaction.roundCash(cash + trans.dCash)
+      if (oldMax + trans.dCash == 0.0 && cash != 0.0) {
+        _cashLostToRounding += cash
+        cash = 0.0
       }
       if (cash < 0) {
         sys.error(s"Can't have $cash cash")
       }
+
       _history append trans
     }
 
