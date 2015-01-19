@@ -86,11 +86,12 @@ package market {
                           .build()
 
       // History given is in reverse chronological order
-      for (p <- cb.getHistoricalPrices(pageNum).toList.reverse) yield {
-        new BitcoinStat(
-          p.getTime().getMillis(),
-          p.getSpotPrice().getAmount().doubleValue())
-      }
+      _history ++= (for (p <- cb.getHistoricalPrices(pageNum).toList.reverse)
+        yield {
+          new BitcoinStat(
+            p.getTime().getMillis(),
+            p.getSpotPrice().getAmount().doubleValue())
+        })
       _isOpen = true
     }
 
