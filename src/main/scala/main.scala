@@ -27,8 +27,10 @@ object MoneyMaker {
   val minRisingSlope: Double = 0.10
   val maxDroppingSlope: Double = 2.4
   val minTurnChange: Double = 1.233
-  val turnTTParams =
-    (19,0.10394231972788748,2.446649732560296,1.2337791754662915)
+  val turnParams =
+    //(19,0.10394231972788748,2.446649732560296,1.2337791754662915)
+    (3,3.1592458657476055,9.277464784901152,2.692856100058393)
+  val meanParams = (10, 1.05, 1.05)
   val cheatInit = (15,0.0,2.8651634826652685,1.2564524811050153)
 
   // CoinDesk Settings
@@ -36,10 +38,10 @@ object MoneyMaker {
   val nDropFromEnd: Int = 50
 
   // Simulated Annealing Settings
-  val stepSize = 1
+  val stepSize = 3
   val initTemp = 450.0
   val alpha = .99
-  val maxTime = 1000
+  val maxTime = 5000
 
   val cdMarket = new CoinDeskMarket(nDrop, nDropFromEnd)
   val histCBMarket = new HistoricalMarket(new CoinbaseMarket())
@@ -63,14 +65,14 @@ object MoneyMaker {
   allMarkets foreach (m => m.open())
   val markets: List[FakeMarket] =
     List(
-      //RandomMarket
-      cdMarket
-      //histCBMarket,
-      //histCBMarket2,
+      RandomMarket,
+      //cdMarket,
+      histCBMarket
+      //histCBMarket2
       //histCBMarket3,
       //histCBMarket4
     )
-  val turn = (TurnTraderFactory.apply _).tupled(turnTTParams)
+  val turn = (TurnTraderFactory.apply _).tupled(turnParams)
   val stubborn = StubbornTraderFactory(sellPercent)
   val mean = LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent)
   val random = RandomTraderFactory
@@ -79,9 +81,10 @@ object MoneyMaker {
       //RandomTraderFactory,
       //StubbornTraderFactory(sellPercent),
       //ReluctantTraderFactory(maxNUpdates, sellPercent),
-      //LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent),
+      LowHighMeanTraderFactory(windowSize, buyPercent, sellPercent),
       //LowMeanStubbornTraderFactory(windowSize, buyPercent),
       //LowMeanReluctantTraderFactory(maxNUpdates, windowSize, buyPercent),
+      new BuySellTraderFactory(mean, mean),
       new BuySellTraderFactory(turn, turn),
       new BuySellTraderFactory(turn, stubborn)
       //new BuySellTraderFactory(stubborn, turn)
@@ -153,34 +156,32 @@ object MoneyMaker {
     traders
   }
 
-  def printDetailTraders(traders: List[Trader]): Unit = {
-    traders foreach (t => {
-      println(s"Detailed information about $t:")
-      println(s"\tWent to ${t.m} ${t.nTradesTried} times")
-      if (t.cashLostToRounding > 0.0) {
-        println(s"\t[Warning] Due to rounding, ${t.name} lost" +
-          f" ${t.cashLostToRounding}%.2f" +
-          s" of ${t.currency}.")
-      }
-      if (t.btcLostToRounding > 0.0) {
-        println(s"\t[Warning] Due to rounding, ${t.name} lost" +
-          f"${t.btcLostToRounding}%.2f" +
-           " of BTC.")
-      }
-    })
+  def printDetails(t: Trader): Unit = {
+    println(s"Detailed information about $t:")
+    println(s"\tWent to ${t.m} ${t.nTradesTried} times")
+    println(s"\tSold ${t.nSells} times. Bought ${t.nBuys} times.")
+    if (t.cashLostToRounding > 0.0) {
+      println(s"\t[Warning] Due to rounding, ${t.name} lost" +
+        f" ${t.cashLostToRounding}%.2f" +
+        s" of ${t.currency}.")
+    }
+    if (t.btcLostToRounding > 0.0) {
+      println(s"\t[Warning] Due to rounding, ${t.name} lost" +
+        f"${t.btcLostToRounding}%.2f" +
+         " of BTC.")
+    }
   }
 
   def printReturns(t: Trader, r: Double): Unit =
     println(s"${t.name} returns at ${t.m}: $r")
 
-  type TTParams = Tuple4[Int, Double, Double, Double]
-
   /* paramSelect uses heuristic algorithms to figure out the best parameters
    * for selected traders. */
   def paramSelect(
-      initSoln: TTParams,
-      newTrader: TTParams => Trader): TTParams = {
-    def costOf(param: TTParams): Double = {
+      initSoln: Params,
+      neighborOf: Params => Params,
+      newTrader: Params => Trader): Params = {
+    def costOf(param: Params): Double = {
       def returnsOf(t: Trader): Double = {
         t.m.reset()
         (1 to simDuration) foreach ( _ => { t.m.update(); t.tryToTrade()})
@@ -195,7 +196,25 @@ object MoneyMaker {
       if (r == 100.0 || t.nBuys == 0 || t.nSells == 0) 0.0 else -r
     }
 
-    def neighborOf(param: TTParams): TTParams = {
+    val SA = new Annealing[Params](
+        costOf _,
+        neighborOf,
+        initSoln,
+        initTemp,
+        alpha,
+        maxTime)
+    SA.run()
+    SA.bestSoln
+  }
+
+  type Params = (Int, Double, Double, Double)
+  //type Params = (Int, Double, Double)
+
+  def heuristicMain(): Unit = {
+    val hcbm2 = new HistoricalMarket(new CoinbaseMarket(2))
+    hcbm2.open()
+
+    def neighborOf(param: Params): Params = {
       val p1 = param._1 + stepSize*(nextInt(3) - 1)
       val p2 = param._2 + stepSize*(nextDouble - 0.5)
       val p3 = param._3 + stepSize*(nextDouble - 0.5)
@@ -206,24 +225,17 @@ object MoneyMaker {
         if (p4 < 0) 0 else p4)
     }
 
-    val SA = new Annealing[TTParams](
-        costOf _,
-        neighborOf _,
-        initSoln,
-        initTemp,
-        alpha,
-        maxTime)
-    SA.run()
-    SA.bestSoln
-  }
-
-  def heuristicMain(): Unit = {
-    val hcbm2 = new HistoricalMarket(new CoinbaseMarket(3))
-    def newTrader(ps: TTParams): Trader = {
-      val f = (TurnTraderFactory.apply _).tupled(ps)
+    def newTrader(ps: Params): Trader = {
+      //val s = (TurnTraderFactory.apply _).tupled(ps)
+      val s = (TurnTraderFactory.apply _).tupled(ps)
+      val b = (TurnTraderFactory.apply _).tupled(ps)
+      val f = new BuySellTraderFactory(s, b)
       traderFromFactory(f, hcbm2)
     }
-    val params = paramSelect(turnTTParams, newTrader)
+
+    val initSoln = turnParams
+
+    val params = paramSelect(initSoln, neighborOf, newTrader)
     val trader = getRanTraders(() => List(newTrader(params))).head
 
     printReturns(trader, trader.returns)
@@ -240,8 +252,8 @@ object MoneyMaker {
       s" [$MinSimDuration, $MaxSimDuration]")
     println(s"\tNumber of trials ran = $NTrials")
     (traders zip returns) map { case(t, r) => printReturns(t, r) }
-    //printDetailTraders(traders)
-    traders foreach Plotter.plotTraderHistory
+    //traders foreach printDetails
+    //traders foreach Plotter.plotTraderHistory
     //traders.head.history foreach println
   }
 
@@ -249,11 +261,11 @@ object MoneyMaker {
     /*
     // Testing things
     val cbm = new CoinbaseMarket()
-    println(cmb.quoteToSell(1.0, currency))
-    println(cmb.quoteToBuy(1.0, currency))
-    cmb.history foreach println
-    cmb.tradeHistory foreach println
-    val h = cmb.history
+    cbm.open()
+    println(cbm.quoteToSell(1.0, currency))
+    println(cbm.quoteToBuy(1.0, currency))
+    cbm.tradeHistory foreach println
+    val h = cbm.history
     val dt = h.head.time - h.tail.head.time
     println(s"dt = $dt")
     */
@@ -264,6 +276,7 @@ object MoneyMaker {
       val hcbm = new HistoricalMarket(new CoinbaseMarket(page))
       hcbm.open()
       val t = getRanTraders(
+      /*
           () => List(new TurnTrader(
             hcbm,
             capital,
@@ -273,6 +286,8 @@ object MoneyMaker {
             minRisingSlope,
             maxDroppingSlope,
             minTurnChange))
+          */
+          () => List(traderFromFactory(RandomTraderFactory, hcbm))
         ).head
       printReturns(t, t.returns)
     }
