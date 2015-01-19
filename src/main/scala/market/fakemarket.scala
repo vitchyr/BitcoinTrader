@@ -70,13 +70,13 @@ package market {
 
     def sell(amount: Double, currency: String): Transaction = {
       if (amount <= 0) sys.error(s"Cannot sell $amount BTCs") else
-      println(s"Fake sell: ${quoteToSell(amount, currency)}")
+      //println(s"Fake sell: ${quoteToSell(amount, currency)}")
       quoteToSell(amount, currency)
     }
 
     def buy(amount: Double, currency: String): Transaction = {
       if (amount <= 0) sys.error(s"Cannot buy $amount BTCs") else
-      println(s"Fake buy: ${quoteToBuy(amount, currency)}")
+      //println(s"Fake buy: ${quoteToBuy(amount, currency)}")
       quoteToBuy(amount, currency)
     }
 
