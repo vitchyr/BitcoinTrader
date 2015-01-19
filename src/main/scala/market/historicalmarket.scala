@@ -8,7 +8,6 @@ package market {
     private var t: Long = 0
 
     private lazy val h = {
-      m.open()
       m.history.toArray
     }
 
@@ -28,6 +27,8 @@ package market {
       i = 0
       t = 0
     }
+
+    override def open(): Unit = m.open()
 
     override def toString = s"Historical '$m' Market"
   }
